@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlashSeek - Lightning Fast Web Search</title>
+  <link rel="stylesheet" href="css/styles-1.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+  <meta name="description" content="FlashSeek - The fastest and most accurate web search engine. Find what you need in a flash!">
+  <meta name="keywords" content="search engine, fast search, web search, FlashSeek">
+  <meta name="dcterms.rightsHolder" content="dt10812">
+  <meta name="dcterms.dateCopyrighted" content="2025">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body>
+  <div class="theme-toggle">
+    <button id="theme-toggle-btn" aria-label="Toggle dark mode">
+      <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden">
+        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+      </svg>
+      <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4"></circle>
+        <path d="M12 2v2"></path>
+        <path d="M12 20v2"></path>
+        <path d="m4.93 4.93 1.41 1.41"></path>
+        <path d="m17.66 17.66 1.41 1.41"></path>
+        <path d="M2 12h2"></path>
+        <path d="M20 12h2"></path>
+        <path d="m6.34 17.66-1.41 1.41"></path>
+        <path d="m19.07 4.93-1.41 1.41"></path>
+      </svg>
+    </button>
+  </div>
+
+  <div class="container">
+    <header class="search-header">
+      <div class="logo-container">
+        <h1 class="logo">FlashSeek</h1>
+        <span class="logo-icon">⚡</span>
+      </div>
+      
+      <div class="search-container">
+        <form id="search-form">
+          <div class="search-input-wrapper">
+            <input 
+              type="text" 
+              id="search-input" 
+              placeholder="Search the web at lightning speed..." 
+              autocomplete="off"
+              aria-label="Search query"
+            >
+            <button type="button" id="clear-search" class="clear-search hidden" aria-label="Clear search">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6 6 18"></path>
+                <path d="m6 6 12 12"></path>
+              </svg>
+            </button>
+            <div id="search-suggestions" class="search-suggestions"></div>
+          </div>
+          <button type="submit" id="search-button" aria-label="Search">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.3-4.3"></path>
+            </svg>
+          </button>
+          <button type="button" id="voice-search" aria-label="Voice search">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+              <line x1="12" y1="19" x2="12" y2="23"></line>
+              <line x1="8" y1="23" x2="16" y2="23"></line>
+            </svg>
+          </button>
+        </form>
+      </div>
+    </header>
+
+    <nav class="search-filters">
+      <ul>
+        <li><button class="filter-btn active" data-filter="all">All</button></li>
+        <li><button class="filter-btn" data-filter="images">Images</button></li>
+        <li><button class="filter-btn" data-filter="videos">Videos</button></li>
+        <li><button class="filter-btn" data-filter="news">News</button></li>
+        <li><button class="filter-btn" data-filter="maps">Maps</button></li>
+      </ul>
+    </nav>
+
+    <main>
+      <div id="search-stats" class="search-stats hidden">
+        <p>About <span id="result-count">0</span> results (<span id="search-time">0.00</span> seconds)</p>
+      </div>
+
+      <div id="search-results" class="search-results">
+        <div class="welcome-screen">
+          <div class="welcome-content">
+            <h2>Welcome to FlashSeek</h2>
+            <p>Experience lightning-fast web searches with our cutting-edge technology</p>
+            <div class="trending-searches">
+              <h3>Trending Searches</h3>
+              <div class="trending-tags">
+                <button class="trending-tag">quantum computing</button>
+                <button class="trending-tag">renewable energy</button>
+                <button class="trending-tag">artificial intelligence</button>
+                <button class="trending-tag">space exploration</button>
+                <button class="trending-tag">biotechnology</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="pagination" class="pagination hidden">
+        <button id="prev-page" class="page-btn" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m15 18-6-6 6-6"></path>
+          </svg>
+          Previous
+        </button>
+        <div id="page-numbers" class="page-numbers"></div>
+        <button id="next-page" class="page-btn">
+          Next
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m9 18 6-6-6-6"></path>
+          </svg>
+        </button>
+      </div>
+    </main>
+
+    <footer>
+      <div class="footer-content">
+        <p>&copy; 2025 FlashSeek. All rights reserved. Created by dt10812.</p>
+        <div class="footer-links">
+          <a href="privacy-policy.html">Privacy Policy</a>
+          <a href="terms-of-service.html">Terms of Service</a>
+          <a href="about.html">About</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <div id="search-history-panel" class="search-history-panel">
+    <div class="history-header">
+      <h3>Search History</h3>
+      <button id="clear-history" class="clear-history-btn">Clear All</button>
+    </div>
+    <ul id="history-list" class="history-list"></ul>
+  </div>
+
+  <button id="history-toggle" class="history-toggle" aria-label="Toggle search history">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 8v4l3 3"></path>
+      <circle cx="12" cy="12" r="10"></circle>
+    </svg>
+  </button>
+
+  <div id="loading-indicator" class="loading-indicator hidden">
+    <div class="spinner"></div>
+    <p>Searching at lightning speed...</p>
+  </div>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
+

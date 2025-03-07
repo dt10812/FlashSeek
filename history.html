@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search History - FlashSeek</title>
+    <link rel="stylesheet" href="css/styles-1.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+</head>
+<body>
+    <div class="container">
+        <header class="search-header">
+            <div class="logo-container">
+                <h1 class="logo">FlashSeek</h1>
+                <span class="logo-icon">⚡</span>
+            </div>
+        </header>
+
+        <nav class="main-nav">
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="history.html" class="active">Search History</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="login.html">Login</a></li>
+            </ul>
+        </nav>
+
+        <main class="history-content">
+            <h2>Your Search History</h2>
+            <div id="history-list" class="history-list">
+                <!-- Search history items will be dynamically inserted here -->
+            </div>
+            <button id="clear-history" class="btn-primary">Clear All History</button>
+        </main>
+
+        <footer>
+            <div class="footer-content">
+                <p>&copy; 2025 FlashSeek. All rights reserved. Created by dt10812.</p>
+                <div class="footer-links">
+                    <a href="index.html">Home</a>
+                    <a href="about.html">About</a>
+                    <a href="privacy-policy.html">Privacy Policy</a>
+                    <a href="terms-of-service.html">Terms of Service</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="js/history.js"></script>
+</body>
+</html>
+
