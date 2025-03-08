@@ -1,186 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up - FlashSeek</title>
-    <link rel="stylesheet" href="css/styles-1.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <!-- CryptoJS for encryption -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up - FlashSeek</title>
+  <link rel="stylesheet" href="css/styles-1.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+  <!-- CryptoJS for encryption -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <!-- Cookie utilities -->
+  <script src="js/cookie-utils.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header class="search-header">
-            <div class="logo-container">
-                <h1 class="logo">FlashSeek</h1>
-                <span class="logo-icon">⚡</span>
-            </div>
-        </header>
+  <div class="container">
+    <header class="search-header">
+      <div class="logo-container">
+        <h1 class="logo">FlashSeek</h1>
+        <span class="logo-icon">⚡</span>
+      </div>
+    </header>
 
-        <main class="auth-content">
-            <h2>Create a FlashSeek Account</h2>
-            <form id="signup-form" class="auth-form">
-                <div class="form-group">
-                    <label for="name">Full Name</label>
-                    <input type="text" id="name" name="name" required>
-                </div>
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" required>
-                </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required>
-                    <small class="form-hint">Password must be at least 6 characters long</small>
-                </div>
-                <div class="form-group">
-                    <label for="confirm-password">Confirm Password</label>
-                    <input type="password" id="confirm-password" name="confirm-password" required>
-                </div>
-                <div id="error-message" class="error-message"></div>
-                <div id="success-message" class="success-message"></div>
-                <button type="submit" class="btn-primary">Sign Up</button>
-            </form>
-            <p class="auth-switch">Already have an account? <a href="login.html">Login</a></p>
-        </main>
+    <main class="auth-content">
+      <h2>Create a FlashSeek Account</h2>
+      <form id="signup-form" class="auth-form">
+        <div class="form-group">
+          <label for="name">Full Name</label>
+          <input type="text" id="name" name="name" required>
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required>
+          <small class="form-hint">Password must be at least 6 characters long</small>
+        </div>
+        <div class="form-group">
+          <label for="confirm-password">Confirm Password</label>
+          <input type="password" id="confirm-password" name="confirm-password" required>
+        </div>
+        <div id="error-message" class="error-message"></div>
+        <div id="success-message" class="success-message"></div>
+        <button type="submit" class="btn-primary">Sign Up</button>
+      </form>
+      <p class="auth-switch">Already have an account? <a href="login.html">Login</a></p>
+    </main>
 
-        <footer>
-            <div class="footer-content">
-                <p>&copy; 2025 FlashSeek. All rights reserved. Created by dt10812.</p>
-                <div class="footer-links">
-                    <a href="index.html">Home</a>
-                    <a href="about.html">About</a>
-                    <a href="privacy-policy.html">Privacy Policy</a>
-                    <a href="terms-of-service.html">Terms of Service</a>
-                </div>
-            </div>
-        </footer>
-    </div>
+    <footer>
+      <div class="footer-content">
+        <p>&copy; 2025 FlashSeek. All rights reserved. Created by dt10812.</p>
+        <div class="footer-links">
+          <a href="index.html">Home</a>
+          <a href="about.html">About</a>
+          <a href="privacy-policy.html">Privacy Policy</a>
+          <a href="terms-of-service.html">Terms of Service</a>
+        </div>
+      </div>
+    </footer>
+  </div>
 
-    <script>
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Redirect if already logged in
+      if (isUserLoggedIn()) {
+        window.location.href = 'index.html';
+        return;
+      }
+      
+      const signupForm = document.getElementById('signup-form');
+      const errorMessage = document.getElementById('error-message');
+      const successMessage = document.getElementById('success-message');
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-
-        // Simple encryption function for password
-        function encryptPassword(password) {
-            return CryptoJS.SHA256(password).toString();
+      signupForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Clear previous messages
+        errorMessage.textContent = '';
+        successMessage.textContent = '';
+        
+        // Get form values
+        const name = document.getElementById('name').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirm-password').value;
+        
+        // Validate form
+        if (!name) {
+          errorMessage.textContent = 'Please enter your full name';
+          return;
         }
-
-        // Function to encrypt data
-        function encryptData(data, userKey) {
-            return CryptoJS.AES.encrypt(JSON.stringify(data), userKey).toString();
+        
+        if (!validateEmail(email)) {
+          errorMessage.textContent = 'Please enter a valid email address';
+          return;
         }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const signupForm = document.getElementById('signup-form');
-            const errorMessage = document.getElementById('error-message');
-            const successMessage = document.getElementById('success-message');
-
-            signupForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                // Clear previous messages
-                errorMessage.textContent = '';
-                successMessage.textContent = '';
-                
-                // Get form values
-                const name = document.getElementById('name').value.trim();
-                const email = document.getElementById('email').value.trim();
-                const password = document.getElementById('password').value;
-                const confirmPassword = document.getElementById('confirm-password').value;
-                
-                // Validate form
-                if (!name) {
-                    errorMessage.textContent = 'Please enter your full name';
-                    return;
-                }
-                
-                if (!validateEmail(email)) {
-                    errorMessage.textContent = 'Please enter a valid email address';
-                    return;
-                }
-                
-                if (password.length < 6) {
-                    errorMessage.textContent = 'Password must be at least 6 characters long';
-                    return;
-                }
-                
-                if (password !== confirmPassword) {
-                    errorMessage.textContent = 'Passwords do not match';
-                    return;
-                }
-                
-                try {
-                    // Create loading message
-                    successMessage.textContent = 'Creating your account...';
-                    
-                    // Create user with Firebase Authentication
-                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                    const user = userCredential.user;
-                    
-                    // Encrypt password for storage
-                    const encryptedPassword = encryptPassword(password);
-                    
-                    // Generate a unique key for this user (for encrypting their data)
-                    const userKey = CryptoJS.SHA256(email + password).toString().substring(0, 16);
-                    
-                    // Store user key in localStorage
-                    localStorage.setItem('userKey', userKey);
-                    
-                    // Save additional user data to Firestore
-                    await db.collection('users').doc(user.uid).set({
-                        name: name,
-                        email: email,
-                        password: encryptedPassword,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    
-                    // Initialize empty search history
-                    const emptyHistory = [];
-                    const encryptedHistory = encryptData(emptyHistory, userKey);
-                    
-                    await db.collection('users').doc(user.uid).collection('userData').doc('searchHistory').set({
-                        history: encryptedHistory,
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    
-                    // Show success message
-                    successMessage.textContent = 'Account created successfully! Redirecting to login...';
-                    
-                    // Redirect to login page after a delay
-                    setTimeout(() => {
-                        window.location.href = 'login.html';
-                    }, 2000);
-                    
-                } catch (error) {
-                    console.error('Error creating account:', error);
-                    errorMessage.textContent = error.message || 'An error occurred while creating your account';
-                    successMessage.textContent = '';
-                }
-            });
+        
+        if (password.length < 6) {
+          errorMessage.textContent = 'Password must be at least 6 characters long';
+          return;
+        }
+        
+        if (password !== confirmPassword) {
+          errorMessage.textContent = 'Passwords do not match';
+          return;
+        }
+        
+        // Create loading message
+        successMessage.textContent = 'Creating your account...';
+        
+        // Simulate a delay for better UX
+        setTimeout(() => {
+          try {
+            // Save user data to cookie
+            saveUserData(email, password, []);
             
-            function validateEmail(email) {
-                const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                return re.test(email);
-            }
-        });
-    </script>
+            // Show success message
+            successMessage.textContent = 'Account created successfully! Redirecting to login...';
+            
+            // Redirect to login page after a delay
+            setTimeout(() => {
+              window.location.href = 'login.html';
+            }, 2000);
+          } catch (error) {
+            console.error('Error creating account:', error);
+            errorMessage.textContent = 'An error occurred while creating your account';
+            successMessage.textContent = '';
+          }
+        }, 1000);
+      });
+      
+      function validateEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+      }
+    });
+  </script>
 </body>
 </html>
+
