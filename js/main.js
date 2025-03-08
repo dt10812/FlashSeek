@@ -9,19 +9,19 @@ document.addEventListener("DOMContentLoaded", () => {
     messagingSenderId: "680919854293",
     appId: "1:680919854293:web:0ce7a3e15f289e444dc65c",
     measurementId: "G-VY1VQHMQKK"
-  };
+  }
 
   // Initialize Firebase if not already initialized
   if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(firebaseConfig)
   }
-  
-  const db = firebase.firestore();
-  const auth = firebase.auth();
+
+  const db = firebase.firestore()
+  const auth = firebase.auth()
 
   // Function to encrypt data
   function encryptData(data, userKey) {
-    return CryptoJS.AES.encrypt(JSON.stringify(data), userKey).toString();
+    return CryptoJS.AES.encrypt(JSON.stringify(data), userKey).toString()
   }
 
   // DOM Elements
@@ -50,15 +50,57 @@ document.addEventListener("DOMContentLoaded", () => {
   const trendingTags = document.querySelectorAll(".trending-tag")
   const loadingIndicator = document.getElementById("loading-indicator")
 
+  // Mock functions for user authentication and data management
+  // Replace these with your actual implementation
+  function isUserLoggedIn() {
+    // Check if the user is logged in (e.g., check for a token in localStorage)
+    return localStorage.getItem("userToken") !== null
+  }
+
+  function getUserData() {
+    // Retrieve user data from localStorage or a database
+    const userData = localStorage.getItem("userData")
+    return userData ? JSON.parse(userData) : { username: "Guest", searchHistory: [] }
+  }
+
+  function logoutUser() {
+    // Clear user data from localStorage and redirect to login page
+    localStorage.removeItem("userToken")
+    localStorage.removeItem("userData")
+  }
+
+  function updateSearchHistory(query) {
+    const userData = getUserData()
+    const timestamp = new Date().toISOString()
+    userData.searchHistory = userData.searchHistory || []
+    userData.searchHistory.push({ query: query, timestamp: timestamp })
+    localStorage.setItem("userData", JSON.stringify(userData))
+  }
+
+  function saveUserData(username, token, searchHistory) {
+    const userData = {
+      username: username,
+      searchHistory: searchHistory,
+    }
+    localStorage.setItem("userData", JSON.stringify(userData))
+    if (token) {
+      localStorage.setItem("userToken", token)
+    }
+  }
+
+  function clearSearchHistory() {
+    const userData = getUserData()
+    userData.searchHistory = []
+    localStorage.setItem("userData", JSON.stringify(userData))
+  }
+
   // Check if user is logged in
-  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true"
-  const userId = localStorage.getItem("userId")
-  const userKey = localStorage.getItem("userKey")
+  const isLoggedIn = isUserLoggedIn()
 
   // Add user info to the UI if logged in
   if (isLoggedIn && document.getElementById("user-info")) {
-    const userEmail = localStorage.getItem("userEmail")
-    document.getElementById("user-info").textContent = userEmail
+    const userData = getUserData()
+    document.getElementById("user-info").textContent = userData.username
     document.getElementById("user-section").classList.remove("hidden")
     document.getElementById("login-section").classList.add("hidden")
   }
@@ -69,7 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const resultsPerPage = 10
   let currentResults = []
   let currentFilter = "all"
-  let searchHistory = JSON.parse(localStorage.getItem("searchHistory")) || []
+  let searchHistory = isLoggedIn ? getUserData().searchHistory : []
   let isDarkMode = localStorage.getItem("darkMode") === "true"
 
   // Initialize
@@ -139,96 +181,57 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Handle user logout
-  async function handleLogout() {
-    try {
-      await auth.signOut();
-      
-      // Clear user data from localStorage
-      localStorage.removeItem('userId');
-      localStorage.removeItem('userEmail');
-      localStorage.removeItem('userKey');
-      localStorage.removeItem('isLoggedIn');
-      
-      // Redirect to login page
-      window.location.href = 'login.html';
-    } catch (error) {
-      console.error('Error logging out:', error);
-      alert('Error logging out. Please try again.');
-    }
+  function handleLogout() {
+    logoutUser()
+    window.location.href = "login.html"
   }
 
   // Add this function to save search queries to history
-  async function addToHistory(query) {
-    // Add to local history first
-    let searchHistory = JSON.parse(localStorage.getItem('searchHistory')) || [];
-    
-    // Remove duplicate if exists
-    searchHistory = searchHistory.filter(item => item.query !== query);
-    
-    // Add new search to the beginning of the array
-    searchHistory.unshift({
-      query: query,
-      timestamp: new Date().toISOString()
-    });
-    
-    // Limit history to 50 items
-    if (searchHistory.length > 50) {
-      searchHistory.pop();
+  function addToHistory(query) {
+    if (!isLoggedIn) {
+      return // Don't save history if not logged in
     }
-    
-    // Save to localStorage
-    localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
-    
-    // If user is logged in, save to Firestore
-    if (isLoggedIn && userId && userKey) {
-      try {
-        // Encrypt the search history before saving to Firestore
-        const encryptedHistory = encryptData(searchHistory, userKey);
-        
-        // Save to Firestore
-        await db.collection('users').doc(userId).collection('userData').doc('searchHistory').set({
-          history: encryptedHistory,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-      } catch (error) {
-        console.error('Error saving search history to Firestore:', error);
-      }
-    }
-    
+
+    // Update search history in cookie
+    updateSearchHistory(query)
+
+    // Update local searchHistory variable
+    searchHistory = getUserData().searchHistory
+
     // Update the UI
-    renderSearchHistory();
+    renderSearchHistory()
   }
 
   // Update the handleSearch function to include addToHistory
   async function handleSearch(e) {
-    e.preventDefault();
-    const query = searchInput.value.trim();
-    
-    if (query.length === 0) return;
-    
-    currentQuery = query;
-    currentPage = 1;
-    
+    e.preventDefault()
+    const query = searchInput.value.trim()
+
+    if (query.length === 0) return
+
+    currentQuery = query
+    currentPage = 1
+
     // Show loading indicator
-    loadingIndicator.classList.remove('hidden');
-    
+    loadingIndicator.classList.remove("hidden")
+
     // Perform search
     try {
-      await performSearch(query);
+      await performSearch(query)
       // Add this line to save the search to history
-      await addToHistory(query);
+      addToHistory(query)
     } catch (error) {
-      console.error('Search error:', error);
-      searchResults.innerHTML = '<div class="error">An error occurred while searching. Please try again later.</div>';
+      console.error("Search error:", error)
+      searchResults.innerHTML = '<div class="error">An error occurred while searching. Please try again later.</div>'
     } finally {
       // Hide loading indicator
-      loadingIndicator.classList.add('hidden');
+      loadingIndicator.classList.add("hidden")
     }
-    
+
     // Update URL for sharing
-    const url = new URL(window.location);
-    url.searchParams.set('q', query);
-    window.history.pushState({}, '', url);
+    const url = new URL(window.location)
+    url.searchParams.set("q", query)
+    window.history.pushState({}, "", url)
   }
 
   async function performSearch(query) {
@@ -428,7 +431,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderSearchHistory() {
     historyList.innerHTML = ""
 
-    if (searchHistory.length === 0) {
+    if (!isLoggedIn || searchHistory.length === 0) {
       historyList.innerHTML = '<li class="no-history">No search history yet</li>'
       return
     }
@@ -469,117 +472,110 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   }
 
-  async function deleteHistoryItem(index) {
-    searchHistory.splice(index, 1);
-    localStorage.setItem("searchHistory", JSON.stringify(searchHistory));
-    
-    // If user is logged in, update Firestore
-    if (isLoggedIn && userId && userKey) {
-      try {
-        const encryptedHistory = encryptData(searchHistory, userKey);
-        await db.collection('users').doc(userId).collection('userData').doc('searchHistory').set({
-          history: encryptedHistory,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-      } catch (error) {
-        console.error('Error updating search history in Firestore:', error);
-      }
-    }
-    
-    renderSearchHistory();
+  function deleteHistoryItem(index) {
+    if (!isLoggedIn) return
+
+    // Get current user data
+    const userData = getUserData()
+
+    // Remove the item at the specified index
+    userData.searchHistory.splice(index, 1)
+
+    // Save updated data
+    saveUserData(userData.username, "", userData.searchHistory)
+
+    // Update local searchHistory variable
+    searchHistory = userData.searchHistory
+
+    // Update the UI
+    renderSearchHistory()
   }
 
-  async function clearHistory() {
-    searchHistory = [];
-    localStorage.setItem("searchHistory", JSON.stringify(searchHistory));
-    
-    // If user is logged in, update Firestore
-    if (isLoggedIn && userId && userKey) {
-      try {
-        const encryptedHistory = encryptData([], userKey);
-        await db.collection('users').doc(userId).collection('userData').doc('searchHistory').set({
-          history: encryptedHistory,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-      } catch (error) {
-        console.error('Error clearing search history in Firestore:', error);
-      }
-    }
-    
-    renderSearchHistory();
+  function clearHistory() {
+    if (!isLoggedIn) return
+
+    // Clear search history in cookie
+    clearSearchHistory()
+
+    // Update local searchHistory variable
+    searchHistory = []
+
+    // Update the UI
+    renderSearchHistory()
   }
 
   function toggleHistoryPanel() {
-    historyPanel.classList.toggle("active");
+    historyPanel.classList.toggle("active")
   }
 
   function toggleTheme() {
-    isDarkMode = !isDarkMode;
-    document.body.classList.toggle("dark");
+    isDarkMode = !isDarkMode
+    document.body.classList.toggle("dark")
 
     if (isDarkMode) {
-      moonIcon.classList.remove("hidden");
-      sunIcon.classList.add("hidden");
+      moonIcon.classList.remove("hidden")
+      sunIcon.classList.add("hidden")
     } else {
-      moonIcon.classList.add("hidden");
-      sunIcon.classList.remove("hidden");
+      moonIcon.classList.add("hidden")
+      sunIcon.classList.remove("hidden")
     }
 
-    localStorage.setItem("darkMode", isDarkMode);
+    localStorage.setItem("darkMode", isDarkMode)
   }
 
   function startVoiceSearch() {
     if ("webkitSpeechRecognition" in window) {
-      const recognition = new webkitSpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = "en-US";
+      const recognition = new webkitSpeechRecognition()
+      recognition.continuous = false
+      recognition.interimResults = false
+      recognition.lang = "en-US"
 
       recognition.onstart = () => {
-        voiceSearchButton.classList.add("listening");
-      };
+        voiceSearchButton.classList.add("listening")
+      }
 
       recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        searchInput.value = transcript;
-        handleSearch(new Event("submit"));
-      };
+        const transcript = event.results[0][0].transcript
+        searchInput.value = transcript
+        handleSearch(new Event("submit"))
+      }
 
       recognition.onerror = (event) => {
-        console.error("Speech recognition error:", event.error);
-      };
+        console.error("Speech recognition error:", event.error)
+      }
 
       recognition.onend = () => {
-        voiceSearchButton.classList.remove("listening");
-      };
+        voiceSearchButton.classList.remove("listening")
+      }
 
-      recognition.start();
+      recognition.start()
     } else {
-      alert("Voice search is not supported in your browser.");
+      alert("Voice search is not supported in your browser.")
     }
   }
 
   // Close history panel when clicking outside
   document.addEventListener("click", (e) => {
     if (historyPanel.classList.contains("active") && !historyPanel.contains(e.target) && e.target !== historyToggle) {
-      historyPanel.classList.remove("active");
+      historyPanel.classList.remove("active")
     }
-  });
+  })
 
   // Check for URL parameters (for sharing searches or coming from history page)
-  const urlParams = new URLSearchParams(window.location.search);
-  const queryParam = urlParams.get('q');
+  const urlParams = new URLSearchParams(window.location.search)
+  const queryParam = urlParams.get("q")
   if (queryParam) {
-    searchInput.value = queryParam;
-    handleSearch(new Event('submit'));
+    searchInput.value = queryParam
+    handleSearch(new Event("submit"))
   }
-});
+})
 
 // Declare firebase
-var firebase = window.firebase;
+var firebase = window.firebase
 
 // Declare CryptoJS
-var CryptoJS = window.CryptoJS;
+var CryptoJS = window.CryptoJS
 
 // Declare webkitSpeechRecognition
-var webkitSpeechRecognition = window.webkitSpeechRecognition;
+var webkitSpeechRecognition = window.webkitSpeechRecognition
+
