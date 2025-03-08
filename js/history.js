@@ -1,51 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // Import Firebase and CryptoJS libraries
-  const firebase = window.firebase
-  const CryptoJS = window.CryptoJS
-
-  // Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyCa5qBEF-62mIr9tbquE5dfipBzeWk4q1k",
-    authDomain: "gring-916c9.firebaseapp.com",
-    databaseURL: "https://gring-916c9-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "gring-916c9",
-    storageBucket: "gring-916c9.firebasestorage.app",
-    messagingSenderId: "680919854293",
-    appId: "1:680919854293:web:0ce7a3e15f289e444dc65c",
-    measurementId: "G-VY1VQHMQKK"
-  }
-
-  // Initialize Firebase if not already initialized
-  if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig)
-  }
-
-  const db = firebase.firestore()
-  const auth = firebase.auth()
-
-  // Function to encrypt data
-  function encryptData(data, userKey) {
-    return CryptoJS.AES.encrypt(JSON.stringify(data), userKey).toString()
-  }
-
-  // Function to decrypt data
-  function decryptData(encryptedData, userKey) {
-    const bytes = CryptoJS.AES.decrypt(encryptedData, userKey)
-    return JSON.parse(bytes.toString(CryptoJS.enc.Utf8))
-  }
-
   const historyList = document.getElementById("history-list")
   const clearHistoryBtn = document.getElementById("clear-history")
 
   // Check if user is logged in
-  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true"
-  const userId = localStorage.getItem("userId")
-  const userKey = localStorage.getItem("userKey")
+  const isLoggedIn = isUserLoggedIn()
 
   // Add user info to the UI if logged in
   if (isLoggedIn && document.getElementById("user-info")) {
-    const userEmail = localStorage.getItem("userEmail")
-    document.getElementById("user-info").textContent = userEmail
+    const userData = getUserData()
+    document.getElementById("user-info").textContent = userData.username
     document.getElementById("user-section").classList.remove("hidden")
     document.getElementById("login-section").classList.add("hidden")
   }
@@ -60,64 +23,33 @@ document.addEventListener("DOMContentLoaded", () => {
   loadSearchHistory()
 
   // Add event listener for clearing history
-  clearHistoryBtn.addEventListener("click", clearSearchHistory)
+  clearHistoryBtn.addEventListener("click", clearAllHistory)
 
   // Handle user logout
-  async function handleLogout() {
-    try {
-      await auth.signOut()
-
-      // Clear user data from localStorage
-      localStorage.removeItem("userId")
-      localStorage.removeItem("userEmail")
-      localStorage.removeItem("userKey")
-      localStorage.removeItem("isLoggedIn")
-
-      // Redirect to login page
-      window.location.href = "login.html"
-    } catch (error) {
-      console.error("Error logging out:", error)
-      alert("Error logging out. Please try again.")
-    }
+  function handleLogout() {
+    logoutUser()
+    window.location.href = "login.html"
   }
 
-  async function loadSearchHistory() {
+  function loadSearchHistory() {
     let searchHistory = []
 
-    // If user is logged in, try to fetch from Firestore first
-    if (isLoggedIn && userId && userKey) {
-      try {
-        const historyDoc = await db.collection("users").doc(userId).collection("userData").doc("searchHistory").get()
-
-        if (historyDoc.exists) {
-          const data = historyDoc.data()
-          if (data && data.history) {
-            // Decrypt the search history
-            searchHistory = decryptData(data.history, userKey)
-            // Update localStorage with the latest from Firestore
-            localStorage.setItem("searchHistory", JSON.stringify(searchHistory))
-          } else {
-            // Initialize with empty history if no history found
-            searchHistory = []
-          }
-        } else {
-          // Initialize with empty history if document doesn't exist
-          searchHistory = []
-        }
-      } catch (error) {
-        console.error("Error fetching search history from Firestore:", error)
-        // Fall back to localStorage if Firestore fails
-        searchHistory = JSON.parse(localStorage.getItem("searchHistory")) || []
-      }
-    } else {
-      // Not logged in, use localStorage
-      searchHistory = JSON.parse(localStorage.getItem("searchHistory")) || []
+    // If user is logged in, get search history from cookie
+    if (isLoggedIn) {
+      const userData = getUserData()
+      searchHistory = userData.searchHistory || []
     }
 
     displaySearchHistory(searchHistory)
   }
 
   function displaySearchHistory(searchHistory) {
+    if (!isLoggedIn) {
+      historyList.innerHTML = '<p class="no-history">Please log in to view your search history.</p>'
+      clearHistoryBtn.disabled = true
+      return
+    }
+
     if (searchHistory.length === 0) {
       historyList.innerHTML = '<p class="no-history">No search history available.</p>'
       return
@@ -155,44 +87,61 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   }
 
-  async function deleteHistoryItem(index) {
-    const searchHistory = JSON.parse(localStorage.getItem("searchHistory")) || []
-    searchHistory.splice(index, 1)
-    localStorage.setItem("searchHistory", JSON.stringify(searchHistory))
+  function deleteHistoryItem(index) {
+    if (!isLoggedIn) return
 
-    // If user is logged in, update Firestore
-    if (isLoggedIn && userId && userKey) {
-      try {
-        const encryptedHistory = encryptData(searchHistory, userKey)
-        await db.collection("users").doc(userId).collection("userData").doc("searchHistory").set({
-          history: encryptedHistory,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        })
-      } catch (error) {
-        console.error("Error updating search history in Firestore:", error)
-      }
-    }
+    // Get current user data
+    const userData = getUserData()
 
-    displaySearchHistory(searchHistory)
+    // Remove the item at the specified index
+    userData.searchHistory.splice(index, 1)
+
+    // Save updated data
+    saveUserData(userData.username, "", userData.searchHistory)
+
+    // Update the UI
+    displaySearchHistory(userData.searchHistory)
   }
 
-  async function clearSearchHistory() {
-    localStorage.removeItem("searchHistory")
+  function clearAllHistory() {
+    if (!isLoggedIn) return
 
-    // If user is logged in, update Firestore
-    if (isLoggedIn && userId && userKey) {
-      try {
-        const encryptedHistory = encryptData([], userKey)
-        await db.collection("users").doc(userId).collection("userData").doc("searchHistory").set({
-          history: encryptedHistory,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        })
-      } catch (error) {
-        console.error("Error clearing search history in Firestore:", error)
-      }
-    }
+    // Clear search history in cookie
+    clearSearchHistory()
 
+    // Update the UI
     displaySearchHistory([])
+  }
+
+  // Mock functions for user authentication and data management
+  // In a real application, these would be implemented properly
+  function isUserLoggedIn() {
+    // Replace with actual authentication logic
+    return localStorage.getItem("loggedIn") === "true"
+  }
+
+  function getUserData() {
+    // Replace with actual data retrieval logic (e.g., from cookies or local storage)
+    const storedData = localStorage.getItem("userData")
+    return storedData ? JSON.parse(storedData) : { username: "Guest", searchHistory: [] }
+  }
+
+  function logoutUser() {
+    // Replace with actual logout logic
+    localStorage.removeItem("loggedIn")
+  }
+
+  function saveUserData(username, password, searchHistory) {
+    // Replace with actual data saving logic
+    const userData = { username: username, searchHistory: searchHistory }
+    localStorage.setItem("userData", JSON.stringify(userData))
+  }
+
+  function clearSearchHistory() {
+    // Replace with actual search history clearing logic
+    const userData = getUserData()
+    userData.searchHistory = []
+    saveUserData(userData.username, "", userData.searchHistory)
   }
 })
 
