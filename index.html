@@ -4,13 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FlashSeek - Lightning Fast Web Search</title>
-  <link rel="stylesheet" href="css/styles-1.css">
+  <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
   <meta name="description" content="FlashSeek - The fastest and most accurate web search engine. Find what you need in a flash!">
   <meta name="keywords" content="search engine, fast search, web search, FlashSeek">
   <meta name="dcterms.rightsHolder" content="dt10812">
   <meta name="dcterms.dateCopyrighted" content="2025">
   <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <!-- CryptoJS for encryption -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
 <body>
   <div class="theme-toggle">
@@ -30,6 +36,17 @@
         <path d="m19.07 4.93-1.41 1.41"></path>
       </svg>
     </button>
+  </div>
+
+  <div class="user-auth-section">
+    <div id="login-section">
+      <a href="login.html" class="auth-link">Login</a>
+      <a href="signup.html" class="auth-link">Sign Up</a>
+    </div>
+    <div id="user-section" class="hidden">
+      <span id="user-info"></span>
+      <button id="logout-btn" class="auth-link">Logout</button>
+    </div>
   </div>
 
   <div class="container">
@@ -133,6 +150,7 @@
           <a href="privacy-policy.html">Privacy Policy</a>
           <a href="terms-of-service.html">Terms of Service</a>
           <a href="about.html">About</a>
+          <a href="history.html">Search History</a>
         </div>
       </div>
     </footer>
