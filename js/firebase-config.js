@@ -1,8 +1,8 @@
 // Import Firebase modules
-import firebase from "firebase/app"
-import "firebase/auth"
-import "firebase/database"
-import CryptoJS from "crypto-js"
+import firebase from 'firebase/app';
+import 'firebase/auth';
+import 'firebase/firestore';
+import CryptoJS from 'crypto-js';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -14,64 +14,75 @@ const firebaseConfig = {
   messagingSenderId: "680919854293",
   appId: "1:680919854293:web:0ce7a3e15f289e444dc65c",
   measurementId: "G-VY1VQHMQKK"
-}
+};
 
 // Initialize Firebase
-firebase.initializeApp(firebaseConfig)
+firebase.initializeApp(firebaseConfig);
 
-// Get a reference to the database service
-const database = firebase.database()
-const auth = firebase.auth()
+// Get references to Firebase services
+const db = firebase.firestore();
+const auth = firebase.auth();
 
 // Simple encryption function for password (not for production use)
 function encryptPassword(password) {
   // In a real application, you would use a proper hashing library
   // This is a simple implementation for demonstration purposes
-  return CryptoJS.SHA256(password).toString()
+  return CryptoJS.SHA256(password).toString();
 }
 
 // Function to encrypt search history
 function encryptData(data, userKey) {
-  return CryptoJS.AES.encrypt(JSON.stringify(data), userKey).toString()
+  return CryptoJS.AES.encrypt(JSON.stringify(data), userKey).toString();
 }
 
 // Function to decrypt search history
 function decryptData(encryptedData, userKey) {
-  const bytes = CryptoJS.AES.decrypt(encryptedData, userKey)
-  return JSON.parse(bytes.toString(CryptoJS.enc.Utf8))
+  const bytes = CryptoJS.AES.decrypt(encryptedData, userKey);
+  return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
 }
 
-// Save user data to Firebase
-function saveUserData(userId, name, email, encryptedPassword) {
-  return database.ref("users/" + userId).set({
+// Save user data to Firestore
+async function saveUserData(userId, name, email, encryptedPassword) {
+  return db.collection('users').doc(userId).set({
     name: name,
     email: email,
     password: encryptedPassword,
-    createdAt: new Date().toISOString(),
-  })
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
 }
 
-// Save search history to Firebase
-function saveSearchHistory(userId, encryptedHistory) {
-  return database.ref("users/" + userId + "/searchHistory").set({
+// Save search history to Firestore
+async function saveSearchHistory(userId, encryptedHistory) {
+  return db.collection('users').doc(userId).collection('userData').doc('searchHistory').set({
     history: encryptedHistory,
-    updatedAt: new Date().toISOString(),
-  })
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
 }
 
-// Get user search history from Firebase
+// Get user search history from Firestore
 async function getSearchHistory(userId, userKey) {
   try {
-    const snapshot = await database.ref("users/" + userId + "/searchHistory").once("value")
-    const data = snapshot.val()
+    const snapshot = await db.collection('users').doc(userId).collection('userData').doc('searchHistory').get();
+    const data = snapshot.data();
     if (data && data.history) {
-      return decryptData(data.history, userKey)
+      return decryptData(data.history, userKey);
     }
-    return []
+    return [];
   } catch (error) {
-    console.error("Error fetching search history:", error)
-    return []
+    console.error("Error fetching search history:", error);
+    return [];
   }
 }
 
-
+// Export functions and objects
+export {
+  firebase,
+  db,
+  auth,
+  encryptPassword,
+  encryptData,
+  decryptData,
+  saveUserData,
+  saveSearchHistory,
+  getSearchHistory
+};
