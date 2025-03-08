@@ -1,169 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - FlashSeek</title>
-    <link rel="stylesheet" href="css/styles-1.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <!-- CryptoJS for encryption -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - FlashSeek</title>
+  <link rel="stylesheet" href="css/styles-1.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+  <!-- CryptoJS for encryption -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <!-- Cookie utilities -->
+  <script src="js/cookie-utils.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header class="search-header">
-            <div class="logo-container">
-                <h1 class="logo">FlashSeek</h1>
-                <span class="logo-icon">⚡</span>
-            </div>
-        </header>
+  <div class="container">
+    <header class="search-header">
+      <div class="logo-container">
+        <h1 class="logo">FlashSeek</h1>
+        <span class="logo-icon">⚡</span>
+      </div>
+    </header>
 
-        <main class="auth-content">
-            <h2>Login to FlashSeek</h2>
-            <form id="login-form" class="auth-form">
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" required>
-                </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required>
-                </div>
-                <div id="error-message" class="error-message"></div>
-                <div id="success-message" class="success-message"></div>
-                <button type="submit" class="btn-primary">Login</button>
-            </form>
-            <p class="auth-switch">Don't have an account? <a href="signup.html">Sign up</a></p>
-        </main>
+    <main class="auth-content">
+      <h2>Login to FlashSeek</h2>
+      <form id="login-form" class="auth-form">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required>
+        </div>
+        <div id="error-message" class="error-message"></div>
+        <div id="success-message" class="success-message"></div>
+        <button type="submit" class="btn-primary">Login</button>
+      </form>
+      <p class="auth-switch">Don't have an account? <a href="signup.html">Sign up</a></p>
+    </main>
 
-        <footer>
-            <div class="footer-content">
-                <p>&copy; 2025 FlashSeek. All rights reserved. Created by dt10812.</p>
-                <div class="footer-links">
-                    <a href="index.html">Home</a>
-                    <a href="about.html">About</a>
-                    <a href="privacy-policy.html">Privacy Policy</a>
-                    <a href="terms-of-service.html">Terms of Service</a>
-                </div>
-            </div>
-        </footer>
-    </div>
+    <footer>
+      <div class="footer-content">
+        <p>&copy; 2025 FlashSeek. All rights reserved. Created by dt10812.</p>
+        <div class="footer-links">
+          <a href="index.html">Home</a>
+          <a href="about.html">About</a>
+          <a href="privacy-policy.html">Privacy Policy</a>
+          <a href="terms-of-service.html">Terms of Service</a>
+        </div>
+      </div>
+    </footer>
+  </div>
 
-    <script>
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Redirect if already logged in
+      if (isUserLoggedIn()) {
+        window.location.href = 'index.html';
+        return;
+      }
+      
+      const loginForm = document.getElementById('login-form');
+      const errorMessage = document.getElementById('error-message');
+      const successMessage = document.getElementById('success-message');
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-
-        // Function to decrypt data
-        function decryptData(encryptedData, userKey) {
-            const bytes = CryptoJS.AES.decrypt(encryptedData, userKey);
-            return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+      loginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Clear previous messages
+        errorMessage.textContent = '';
+        successMessage.textContent = '';
+        
+        // Get form values
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        
+        // Validate form
+        if (!validateEmail(email)) {
+          errorMessage.textContent = 'Please enter a valid email address';
+          return;
         }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const loginForm = document.getElementById('login-form');
-            const errorMessage = document.getElementById('error-message');
-            const successMessage = document.getElementById('success-message');
-
-            loginForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                // Clear previous messages
-                errorMessage.textContent = '';
-                successMessage.textContent = '';
-                
-                // Get form values
-                const email = document.getElementById('email').value.trim();
-                const password = document.getElementById('password').value;
-                
-                // Validate form
-                if (!validateEmail(email)) {
-                    errorMessage.textContent = 'Please enter a valid email address';
-                    return;
-                }
-                
-                if (password.length < 6) {
-                    errorMessage.textContent = 'Password must be at least 6 characters long';
-                    return;
-                }
-                
-                try {
-                    // Create loading message
-                    successMessage.textContent = 'Logging in...';
-                    
-                    // Sign in with Firebase Authentication
-                    const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                    const user = userCredential.user;
-                    
-                    // Generate user key for decryption (same algorithm as signup)
-                    const userKey = CryptoJS.SHA256(email + password).toString().substring(0, 16);
-                    
-                    // Store user info in localStorage
-                    localStorage.setItem('userId', user.uid);
-                    localStorage.setItem('userEmail', email);
-                    localStorage.setItem('userKey', userKey);
-                    localStorage.setItem('isLoggedIn', 'true');
-                    
-                    // Fetch user's search history from Firestore
-                    try {
-                        const historyDoc = await db.collection('users').doc(user.uid).collection('userData').doc('searchHistory').get();
-                        
-                        if (historyDoc.exists) {
-                            const data = historyDoc.data();
-                            if (data && data.history) {
-                                // Decrypt the search history
-                                const searchHistory = decryptData(data.history, userKey);
-                                // Store in localStorage for immediate use
-                                localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
-                            } else {
-                                // Initialize with empty history if no history found
-                                localStorage.setItem('searchHistory', JSON.stringify([]));
-                            }
-                        } else {
-                            // Initialize with empty history if document doesn't exist
-                            localStorage.setItem('searchHistory', JSON.stringify([]));
-                        }
-                    } catch (historyError) {
-                        console.error('Error fetching search history:', historyError);
-                        // Initialize with empty history if there's an error
-                        localStorage.setItem('searchHistory', JSON.stringify([]));
-                    }
-                    
-                    // Show success message
-                    successMessage.textContent = 'Login successful! Redirecting...';
-                    
-                    // Redirect to home page after a delay
-                    setTimeout(() => {
-                        window.location.href = 'index.html';
-                    }, 1500);
-                    
-                } catch (error) {
-                    console.error('Error logging in:', error);
-                    errorMessage.textContent = 'Invalid email or password';
-                    successMessage.textContent = '';
-                }
-            });
+        
+        if (password.length < 6) {
+          errorMessage.textContent = 'Password must be at least 6 characters long';
+          return;
+        }
+        
+        // Create loading message
+        successMessage.textContent = 'Logging in...';
+        
+        // Simulate a delay for better UX
+        setTimeout(() => {
+          try {
+            // Get existing user data
+            const userData = getUserData();
             
-            function validateEmail(email) {
-                const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                return re.test(email);
+            // Check if user exists and password matches
+            if (!userData || userData.username !== email || userData.password !== hashPassword(password)) {
+              errorMessage.textContent = 'Invalid email or password';
+              successMessage.textContent = '';
+              return;
             }
-        });
-    </script>
+            
+            // Update the cookie with the same data (refreshes expiration)
+            saveUserData(userData.username, password, userData.searchHistory);
+            
+            // Show success message
+            successMessage.textContent = 'Login successful! Redirecting...';
+            
+            // Redirect to home page after a delay
+            setTimeout(() => {
+              window.location.href = 'index.html';
+            }, 1500);
+          } catch (error) {
+            console.error('Error logging in:', error);
+            errorMessage.textContent = 'An error occurred while logging in';
+            successMessage.textContent = '';
+          }
+        }, 1000);
+      });
+      
+      function validateEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+      }
+    });
+  </script>
 </body>
 </html>
+
