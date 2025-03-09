@@ -97,7 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
     userData.searchHistory.splice(index, 1)
 
     // Save updated data
-    saveUserData(userData.username, "", userData.searchHistory)
+    saveUserData(userData.username, "", userData.searchHistory, userData.settings)
 
     // Update the UI
     displaySearchHistory(userData.searchHistory)
@@ -123,7 +123,9 @@ document.addEventListener("DOMContentLoaded", () => {
   function getUserData() {
     // Replace with actual data retrieval logic (e.g., from cookies or local storage)
     const storedData = localStorage.getItem("userData")
-    return storedData ? JSON.parse(storedData) : { username: "Guest", searchHistory: [] }
+    return storedData
+      ? JSON.parse(storedData)
+      : { username: "Guest", searchHistory: [], settings: { safeSearch: true } }
   }
 
   function logoutUser() {
@@ -131,9 +133,9 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.removeItem("loggedIn")
   }
 
-  function saveUserData(username, password, searchHistory) {
+  function saveUserData(username, password, searchHistory, settings = { safeSearch: true }) {
     // Replace with actual data saving logic
-    const userData = { username: username, searchHistory: searchHistory }
+    const userData = { username: username, searchHistory: searchHistory, settings: settings }
     localStorage.setItem("userData", JSON.stringify(userData))
   }
 
@@ -141,7 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Replace with actual search history clearing logic
     const userData = getUserData()
     userData.searchHistory = []
-    saveUserData(userData.username, "", userData.searchHistory)
+    saveUserData(userData.username, "", userData.searchHistory, userData.settings)
   }
 })
 
