@@ -101,8 +101,11 @@
               return;
             }
             
+            // Ensure settings object exists with SafeSearch
+            const settings = userData.settings || { safeSearch: true };
+            
             // Update the cookie with the same data (refreshes expiration)
-            saveUserData(userData.username, password, userData.searchHistory);
+            saveUserData(userData.username, password, userData.searchHistory, settings);
             
             // Show success message
             successMessage.textContent = 'Login successful! Redirecting...';
