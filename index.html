@@ -15,6 +15,13 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
   <!-- Cookie utilities -->
   <script src="js/cookie-utils.js"></script>
+  <!-- Add a console log to check if the script is loaded -->
+  <script>
+    console.log("Page loaded");
+    document.addEventListener("DOMContentLoaded", function() {
+      console.log("DOM fully loaded");
+    });
+  </script>
 </head>
 <body>
   <div class="theme-toggle">
@@ -55,6 +62,7 @@
       </div>
       
       <div class="search-container">
+        <!-- Make sure the search form has the correct ID -->
         <form id="search-form">
           <div class="search-input-wrapper">
             <input 
@@ -177,5 +185,4 @@
   <script src="js/main.js"></script>
 </body>
 </html>
-
 
