@@ -59,28 +59,27 @@ function deleteCookie(name) {
 }
 
 // Function to save user data in the specified format: "username-password-searchhistory"
-function saveUserData(username, password, searchHistory = [], settings = { safeSearch: false }) {
+function saveUserData(username, password, searchHistory = []) {
   // Hash the password for security
-  const hashedPassword = password ? hashPassword(password) : "";
-  
+  const hashedPassword = password ? hashPassword(password) : ""
+
   // Create the data object in the required format
   const userData = {
     username: username,
     password: hashedPassword,
     searchHistory: searchHistory,
-    settings: settings
-  };
-  
-  // Create the string in the format "username-password-searchhistory-settings"
-  const dataString = `${username}-${hashedPassword}-${JSON.stringify(searchHistory)}-${JSON.stringify(settings)}`;
-  
+  }
+
+  // Create the string in the format "username-password-searchhistory"
+  const dataString = `${username}-${hashedPassword}-${JSON.stringify(searchHistory)}`
+
   // Encrypt the entire data string
-  const encryptedData = encryptData(dataString);
-  
+  const encryptedData = encryptData(dataString)
+
   // Save to cookie
-  setCookie("flashseek_user_data", encryptedData);
-  
-  return true;
+  setCookie("flashseek_user_data", encryptedData)
+
+  return true
 }
 
 // Function to get user data from cookie
@@ -98,7 +97,7 @@ function getUserData() {
     return null
   }
 
-  // Parse the string in the format "username-password-searchhistory-settings"
+  // Parse the string in the format "username-password-searchhistory"
   const parts = dataString.split("-")
 
   if (parts.length < 3) {
@@ -108,27 +107,19 @@ function getUserData() {
   const username = parts[0]
   const password = parts[1]
   let searchHistory = []
-  let settings = { safeSearch: true }
 
   try {
-    // The search history is the third part
-    const historyString = parts[2]
+    // The search history is the rest of the string after the second dash
+    const historyString = parts.slice(2).join("-")
     searchHistory = JSON.parse(historyString)
-
-    // The settings are the fourth part (if it exists)
-    if (parts.length >= 4) {
-      const settingsString = parts[3]
-      settings = JSON.parse(settingsString)
-    }
   } catch (error) {
-    console.error("Error parsing user data:", error)
+    console.error("Error parsing search history:", error)
   }
 
   return {
     username: username,
     password: password,
     searchHistory: Array.isArray(searchHistory) ? searchHistory : [],
-    settings: settings,
   }
 }
 
@@ -155,37 +146,9 @@ function updateSearchHistory(query) {
   }
 
   // Save updated data
-  saveUserData(userData.username, "", userData.searchHistory, userData.settings)
+  saveUserData(userData.username, "", userData.searchHistory)
 
   return true
-}
-
-// Function to update user settings
-function updateUserSettings(settings) {
-  const userData = getUserData()
-
-  if (!userData) {
-    return false
-  }
-
-  // Update settings
-  userData.settings = { ...userData.settings, ...settings }
-
-  // Save updated data
-  saveUserData(userData.username, "", userData.searchHistory, userData.settings)
-
-  return true
-}
-
-// Function to get user settings
-function getUserSettings() {
-  const userData = getUserData();
-  
-  if (!userData) {
-    return { safeSearch: false }; // Default settings
-  }
-  
-  return userData.settings || { safeSearch: false };
 }
 
 // Function to clear search history
@@ -200,7 +163,7 @@ function clearSearchHistory() {
   userData.searchHistory = []
 
   // Save updated data
-  saveUserData(userData.username, "", userData.searchHistory, userData.settings)
+  saveUserData(userData.username, "", userData.searchHistory)
 
   return true
 }
@@ -226,8 +189,7 @@ window.deleteCookie = deleteCookie
 window.saveUserData = saveUserData
 window.getUserData = getUserData
 window.updateSearchHistory = updateSearchHistory
-window.updateUserSettings = updateUserSettings
-window.getUserSettings = getUserSettings
 window.clearSearchHistory = clearSearchHistory
 window.isUserLoggedIn = isUserLoggedIn
 window.logoutUser = logoutUser
+
