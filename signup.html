@@ -40,6 +40,13 @@
           <label for="confirm-password">Confirm Password</label>
           <input type="password" id="confirm-password" name="confirm-password" required>
         </div>
+        <div class="form-group">
+          <label class="safe-search-label">
+            <input type="checkbox" id="safe-search-signup" checked>
+            <span class="safe-search-text">Enable SafeSearch</span>
+          </label>
+          <small class="form-hint">SafeSearch filters out explicit content from search results</small>
+        </div>
         <div id="error-message" class="error-message"></div>
         <div id="success-message" class="success-message"></div>
         <button type="submit" class="btn-primary">Sign Up</button>
@@ -71,6 +78,7 @@
       const signupForm = document.getElementById('signup-form');
       const errorMessage = document.getElementById('error-message');
       const successMessage = document.getElementById('success-message');
+      const safeSearchCheckbox = document.getElementById('safe-search-signup');
 
       signupForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -84,6 +92,7 @@
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         const confirmPassword = document.getElementById('confirm-password').value;
+        const safeSearch = safeSearchCheckbox.checked;
         
         // Validate form
         if (!name) {
@@ -112,8 +121,8 @@
         // Simulate a delay for better UX
         setTimeout(() => {
           try {
-            // Save user data to cookie
-            saveUserData(email, password, []);
+            // Save user data to cookie with SafeSearch setting
+            saveUserData(email, password, [], { safeSearch: safeSearch });
             
             // Show success message
             successMessage.textContent = 'Account created successfully! Redirecting to login...';
