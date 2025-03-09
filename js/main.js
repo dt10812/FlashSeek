@@ -138,7 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentFilter = "all"
   let searchHistory = isLoggedIn ? getUserData().searchHistory : []
   let isDarkMode = localStorage.getItem("darkMode") === "true"
-  let isSafeSearchEnabled = true // Default to true
+  let isSafeSearchEnabled = false // Default to false
 
   // Initialize
   init()
@@ -198,9 +198,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Initialize SafeSearch from user settings
     if (isLoggedIn) {
       const userData = getUserData()
-      isSafeSearchEnabled = userData.settings?.safeSearch !== false
+      isSafeSearchEnabled = userData.settings?.safeSearch === true
     } else {
-      isSafeSearchEnabled = true // Default for non-logged in users
+      isSafeSearchEnabled = false // Default for non-logged in users
     }
     safeSearchCheckbox.checked = isSafeSearchEnabled
 
