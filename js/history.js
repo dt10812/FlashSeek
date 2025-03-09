@@ -125,7 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const storedData = localStorage.getItem("userData")
     return storedData
       ? JSON.parse(storedData)
-      : { username: "Guest", searchHistory: [], settings: { safeSearch: true } }
+      : { username: "Guest", searchHistory: [], settings: { safeSearch: false } }
   }
 
   function logoutUser() {
@@ -133,7 +133,7 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.removeItem("loggedIn")
   }
 
-  function saveUserData(username, password, searchHistory, settings = { safeSearch: true }) {
+  function saveUserData(username, password, searchHistory, settings = { safeSearch: false }) {
     // Replace with actual data saving logic
     const userData = { username: username, searchHistory: searchHistory, settings: settings }
     localStorage.setItem("userData", JSON.stringify(userData))
