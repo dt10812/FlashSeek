@@ -1,29 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyCa5qBEF-62mIr9tbquE5dfipBzeWk4q1k",
-    authDomain: "gring-916c9.firebaseapp.com",
-    databaseURL: "https://gring-916c9-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "gring-916c9",
-    storageBucket: "gring-916c9.firebasestorage.app",
-    messagingSenderId: "680919854293",
-    appId: "1:680919854293:web:0ce7a3e15f289e444dc65c",
-    measurementId: "G-VY1VQHMQKK"
-  }
-
-  // Initialize Firebase if not already initialized
-  if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig)
-  }
-
-  const db = firebase.firestore()
-  const auth = firebase.auth()
-
-  // Function to encrypt data
-  function encryptData(data, userKey) {
-    return CryptoJS.AES.encrypt(JSON.stringify(data), userKey).toString()
-  }
-
   // DOM Elements
   const searchForm = document.getElementById("search-form")
   const searchInput = document.getElementById("search-input")
@@ -50,48 +25,113 @@ document.addEventListener("DOMContentLoaded", () => {
   const trendingTags = document.querySelectorAll(".trending-tag")
   const loadingIndicator = document.getElementById("loading-indicator")
 
-  // Mock functions for user authentication and data management
-  // Replace these with your actual implementation
+  // Declare CryptoJS to avoid undefined errors
+  let CryptoJS
+
+  // Add a fallback for CryptoJS if it's not available
+  if (typeof CryptoJS === "undefined") {
+    console.warn("CryptoJS is not available, encryption functions will not work properly")
+    CryptoJS = {
+      AES: {
+        encrypt: (data, key) => ({ toString: () => btoa(data) }),
+        decrypt: (data, key) => ({ toString: (format) => atob(data) }),
+      },
+      SHA256: (data) => ({ toString: () => data }),
+    }
+  }
+
+  // User authentication and data management functions
   function isUserLoggedIn() {
-    // Check if the user is logged in (e.g., check for a token in localStorage)
-    return localStorage.getItem("userToken") !== null
+    return getCookie("flashseek_user_data") !== ""
   }
 
   function getUserData() {
-    // Retrieve user data from localStorage or a database
-    const userData = localStorage.getItem("userData")
-    return userData ? JSON.parse(userData) : { username: "Guest", searchHistory: [] }
+    const userData = window.getUserData ? window.getUserData() : null
+    return userData || { username: "Guest", searchHistory: [] }
   }
 
   function logoutUser() {
-    // Clear user data from localStorage and redirect to login page
-    localStorage.removeItem("userToken")
-    localStorage.removeItem("userData")
+    if (window.logoutUser) {
+      window.logoutUser()
+    } else {
+      deleteCookie("flashseek_user_data")
+    }
   }
 
   function updateSearchHistory(query) {
-    const userData = getUserData()
-    const timestamp = new Date().toISOString()
-    userData.searchHistory = userData.searchHistory || []
-    userData.searchHistory.push({ query: query, timestamp: timestamp })
-    localStorage.setItem("userData", JSON.stringify(userData))
+    if (window.updateSearchHistory) {
+      window.updateSearchHistory(query)
+    } else {
+      const userData = getUserData()
+      const timestamp = new Date().toISOString()
+      userData.searchHistory = userData.searchHistory || []
+      userData.searchHistory.push({ query: query, timestamp: timestamp })
+      saveUserData(userData.username, "", userData.searchHistory)
+    }
   }
 
-  function saveUserData(username, token, searchHistory) {
-    const userData = {
-      username: username,
-      searchHistory: searchHistory,
-    }
-    localStorage.setItem("userData", JSON.stringify(userData))
-    if (token) {
-      localStorage.setItem("userToken", token)
+  function saveUserData(username, password, searchHistory) {
+    if (window.saveUserData) {
+      window.saveUserData(username, password, searchHistory)
+    } else {
+      // Fallback if cookie-utils.js is not loaded
+      const userData = {
+        username: username,
+        searchHistory: searchHistory,
+      }
+      localStorage.setItem("userData", JSON.stringify(userData))
     }
   }
 
   function clearSearchHistory() {
-    const userData = getUserData()
-    userData.searchHistory = []
-    localStorage.setItem("userData", JSON.stringify(userData))
+    if (window.clearSearchHistory) {
+      window.clearSearchHistory()
+    } else {
+      const userData = getUserData()
+      userData.searchHistory = []
+      saveUserData(userData.username, "", userData.searchHistory)
+    }
+  }
+
+  // Cookie utility functions (fallbacks if cookie-utils.js is not loaded)
+  function setCookie(name, value, days = 30) {
+    if (window.setCookie) {
+      window.setCookie(name, value, days)
+    } else {
+      const date = new Date()
+      date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000)
+      const expires = "expires=" + date.toUTCString()
+      document.cookie = name + "=" + value + ";" + expires + ";path=/;SameSite=Strict"
+    }
+  }
+
+  function getCookie(name) {
+    if (window.getCookie) {
+      return window.getCookie(name)
+    } else {
+      const cookieName = name + "="
+      const decodedCookie = decodeURIComponent(document.cookie)
+      const cookieArray = decodedCookie.split(";")
+
+      for (let i = 0; i < cookieArray.length; i++) {
+        let cookie = cookieArray[i]
+        while (cookie.charAt(0) === " ") {
+          cookie = cookie.substring(1)
+        }
+        if (cookie.indexOf(cookieName) === 0) {
+          return cookie.substring(cookieName.length, cookie.length)
+        }
+      }
+      return ""
+    }
+  }
+
+  function deleteCookie(name) {
+    if (window.deleteCookie) {
+      window.deleteCookie(name)
+    } else {
+      document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;"
+    }
   }
 
   // Check if user is logged in
@@ -119,23 +159,65 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Functions
   function init() {
+    console.log("Initializing search functionality")
+
     // Set up event listeners
-    searchForm.addEventListener("submit", handleSearch)
-    searchInput.addEventListener("input", handleInput)
-    searchInput.addEventListener("focus", showSuggestions)
-    searchInput.addEventListener("blur", () => {
-      // Delay hiding suggestions to allow for clicks
-      setTimeout(() => {
-        searchSuggestions.classList.remove("active")
-      }, 200)
-    })
-    clearSearchBtn.addEventListener("click", clearSearch)
-    prevPageBtn.addEventListener("click", () => changePage(currentPage - 1))
-    nextPageBtn.addEventListener("click", () => changePage(currentPage + 1))
-    historyToggle.addEventListener("click", toggleHistoryPanel)
-    clearHistoryBtn.addEventListener("click", clearHistory)
-    themeToggleBtn.addEventListener("click", toggleTheme)
-    voiceSearchButton.addEventListener("click", startVoiceSearch)
+    if (searchForm) {
+      searchForm.addEventListener("submit", handleSearch)
+      console.log("Search form event listener attached")
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener("input", handleInput)
+      searchInput.addEventListener("focus", showSuggestions)
+      searchInput.addEventListener("blur", () => {
+        // Delay hiding suggestions to allow for clicks
+        setTimeout(() => {
+          if (searchSuggestions) {
+            searchSuggestions.classList.remove("active")
+          }
+        }, 200)
+      })
+    }
+
+    if (clearSearchBtn) {
+      clearSearchBtn.addEventListener("click", clearSearch)
+    }
+
+    if (prevPageBtn) {
+      prevPageBtn.addEventListener("click", () => changePage(currentPage - 1))
+    }
+
+    if (nextPageBtn) {
+      nextPageBtn.addEventListener("click", () => changePage(currentPage + 1))
+    }
+
+    if (historyToggle) {
+      historyToggle.addEventListener("click", toggleHistoryPanel)
+    }
+
+    if (clearHistoryBtn) {
+      clearHistoryBtn.addEventListener("click", clearHistory)
+    }
+
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener("click", toggleTheme)
+    }
+
+    if (voiceSearchButton) {
+      voiceSearchButton.addEventListener("click", startVoiceSearch)
+    }
+
+    // Add a fallback for webkitSpeechRecognition if it's not available
+    if (typeof webkitSpeechRecognition === "undefined") {
+      console.warn("webkitSpeechRecognition is not available, voice search will not work")
+      window.webkitSpeechRecognition = function () {
+        this.start = () => alert("Voice search is not supported in your browser.")
+        this.continuous = false
+        this.interimResults = false
+        this.lang = "en-US"
+      }
+    }
 
     // Set up logout button if it exists
     const logoutBtn = document.getElementById("logout-btn")
@@ -153,19 +235,21 @@ document.addEventListener("DOMContentLoaded", () => {
     // Set up trending tags
     trendingTags.forEach((tag) => {
       tag.addEventListener("click", () => {
-        searchInput.value = tag.textContent
-        handleSearch(new Event("submit"))
+        if (searchInput) {
+          searchInput.value = tag.textContent
+          handleSearch(new Event("submit"))
+        }
       })
     })
 
     // Initialize theme
     if (isDarkMode) {
       document.body.classList.add("dark")
-      moonIcon.classList.remove("hidden")
-      sunIcon.classList.add("hidden")
+      if (moonIcon) moonIcon.classList.remove("hidden")
+      if (sunIcon) sunIcon.classList.add("hidden")
     } else {
-      moonIcon.classList.add("hidden")
-      sunIcon.classList.remove("hidden")
+      if (moonIcon) moonIcon.classList.add("hidden")
+      if (sunIcon) sunIcon.classList.remove("hidden")
     }
 
     // Render search history
@@ -174,9 +258,18 @@ document.addEventListener("DOMContentLoaded", () => {
     // Check for URL parameters (for sharing searches)
     const urlParams = new URLSearchParams(window.location.search)
     const queryParam = urlParams.get("q")
-    if (queryParam) {
+    if (queryParam && searchInput) {
       searchInput.value = queryParam
       handleSearch(new Event("submit"))
+    }
+
+    // Add a direct event listener to the search button as a fallback
+    if (searchButton && searchInput) {
+      searchButton.addEventListener("click", (e) => {
+        e.preventDefault()
+        console.log("Search button clicked directly")
+        handleSearch(new Event("submit"))
+      })
     }
   }
 
@@ -192,7 +285,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return // Don't save history if not logged in
     }
 
-    // Update search history in cookie
+    // Update search history
     updateSearchHistory(query)
 
     // Update local searchHistory variable
@@ -205,27 +298,46 @@ document.addEventListener("DOMContentLoaded", () => {
   // Update the handleSearch function to include addToHistory
   async function handleSearch(e) {
     e.preventDefault()
+    console.log("Search form submitted")
+
+    if (!searchInput) {
+      console.error("Search input element not found")
+      return
+    }
+
     const query = searchInput.value.trim()
 
-    if (query.length === 0) return
+    if (query.length === 0) {
+      console.log("Empty query, search aborted")
+      return
+    }
 
     currentQuery = query
     currentPage = 1
 
     // Show loading indicator
-    loadingIndicator.classList.remove("hidden")
+    if (loadingIndicator) {
+      loadingIndicator.classList.remove("hidden")
+      console.log("Loading indicator shown")
+    }
 
     // Perform search
     try {
+      console.log("Performing search for:", query)
       await performSearch(query)
       // Add this line to save the search to history
       addToHistory(query)
     } catch (error) {
       console.error("Search error:", error)
-      searchResults.innerHTML = '<div class="error">An error occurred while searching. Please try again later.</div>'
+      if (searchResults) {
+        searchResults.innerHTML = '<div class="error">An error occurred while searching. Please try again later.</div>'
+      }
     } finally {
       // Hide loading indicator
-      loadingIndicator.classList.add("hidden")
+      if (loadingIndicator) {
+        loadingIndicator.classList.add("hidden")
+        console.log("Loading indicator hidden")
+      }
     }
 
     // Update URL for sharing
@@ -234,38 +346,57 @@ document.addEventListener("DOMContentLoaded", () => {
     window.history.pushState({}, "", url)
   }
 
+  // Update the performSearch function to add more logging
   async function performSearch(query) {
     const startTime = performance.now()
+    console.log("Starting search API call")
 
     // Wikipedia API endpoint
     const apiUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`
+    console.log("API URL:", apiUrl)
 
-    const response = await fetch(apiUrl)
-    const data = await response.json()
+    try {
+      const response = await fetch(apiUrl)
+      console.log("API response received:", response.status)
 
-    currentResults = data.query.search.map((result) => ({
-      title: result.title,
-      url: `https://en.wikipedia.org/wiki/${encodeURIComponent(result.title.replace(/ /g, "_"))}`,
-      description: result.snippet,
-      timestamp: result.timestamp,
-    }))
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`)
+      }
 
-    const endTime = performance.now()
-    const timeTaken = ((endTime - startTime) / 1000).toFixed(2)
+      const data = await response.json()
+      console.log("API data parsed, results:", data.query.search.length)
 
-    // Update search stats
-    resultCount.textContent = data.query.searchinfo.totalhits
-    searchTime.textContent = timeTaken
+      currentResults = data.query.search.map((result) => ({
+        title: result.title,
+        url: `https://en.wikipedia.org/wiki/${encodeURIComponent(result.title.replace(/ /g, "_"))}`,
+        description: result.snippet,
+        timestamp: result.timestamp,
+      }))
 
-    // Render results
-    renderResults()
+      const endTime = performance.now()
+      const timeTaken = ((endTime - startTime) / 1000).toFixed(2)
+      console.log(`Search completed in ${timeTaken} seconds`)
 
-    // Show clear button and search stats
-    clearSearchBtn.classList.remove("hidden")
-    searchStats.classList.remove("hidden")
+      // Update search stats
+      if (resultCount) resultCount.textContent = data.query.searchinfo.totalhits
+      if (searchTime) searchTime.textContent = timeTaken
+
+      // Render results
+      renderResults()
+      console.log("Results rendered")
+
+      // Show clear button and search stats
+      if (clearSearchBtn) clearSearchBtn.classList.remove("hidden")
+      if (searchStats) searchStats.classList.remove("hidden")
+    } catch (error) {
+      console.error("Error in performSearch:", error)
+      throw error
+    }
   }
 
   function renderResults() {
+    if (!searchResults) return
+
     // Clear previous results
     searchResults.innerHTML = ""
 
@@ -282,7 +413,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <p>Try different keywords or check your spelling.</p>
         </div>
       `
-      pagination.classList.add("hidden")
+      if (pagination) pagination.classList.add("hidden")
       return
     }
 
@@ -309,6 +440,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderPagination() {
+    if (!pagination || !pageNumbers) return
+
     const totalPages = Math.ceil(currentResults.length / resultsPerPage)
 
     if (totalPages <= 1) {
@@ -337,8 +470,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Update prev/next buttons
-    prevPageBtn.disabled = currentPage === 1
-    nextPageBtn.disabled = currentPage === totalPages
+    if (prevPageBtn) prevPageBtn.disabled = currentPage === 1
+    if (nextPageBtn) nextPageBtn.disabled = currentPage === totalPages
   }
 
   function changePage(page) {
@@ -346,10 +479,14 @@ document.addEventListener("DOMContentLoaded", () => {
     renderResults()
 
     // Scroll to top of results
-    searchResults.scrollIntoView({ behavior: "smooth" })
+    if (searchResults) {
+      searchResults.scrollIntoView({ behavior: "smooth" })
+    }
   }
 
   function handleInput() {
+    if (!searchInput || !clearSearchBtn) return
+
     const query = searchInput.value.trim()
 
     // Show/hide clear button
@@ -358,11 +495,15 @@ document.addEventListener("DOMContentLoaded", () => {
       showSuggestions()
     } else {
       clearSearchBtn.classList.add("hidden")
-      searchSuggestions.classList.remove("active")
+      if (searchSuggestions) {
+        searchSuggestions.classList.remove("active")
+      }
     }
   }
 
   async function showSuggestions() {
+    if (!searchInput || !searchSuggestions) return
+
     const query = searchInput.value.trim()
 
     if (query.length === 0) {
@@ -404,6 +545,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function clearSearch() {
+    if (!searchInput || !clearSearchBtn || !searchSuggestions) return
+
     searchInput.value = ""
     clearSearchBtn.classList.add("hidden")
     searchSuggestions.classList.remove("active")
@@ -429,6 +572,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderSearchHistory() {
+    if (!historyList) return
+
     historyList.innerHTML = ""
 
     if (!isLoggedIn || searchHistory.length === 0) {
@@ -458,9 +603,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Add event listeners
       historyItem.querySelector(".history-query").addEventListener("click", () => {
-        searchInput.value = item.query
-        handleSearch(new Event("submit"))
-        toggleHistoryPanel()
+        if (searchInput) {
+          searchInput.value = item.query
+          handleSearch(new Event("submit"))
+          toggleHistoryPanel()
+        }
       })
 
       historyItem.querySelector(".delete-history").addEventListener("click", (e) => {
@@ -494,7 +641,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function clearHistory() {
     if (!isLoggedIn) return
 
-    // Clear search history in cookie
+    // Clear search history
     clearSearchHistory()
 
     // Update local searchHistory variable
@@ -505,6 +652,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function toggleHistoryPanel() {
+    if (!historyPanel) return
     historyPanel.classList.toggle("active")
   }
 
@@ -512,12 +660,14 @@ document.addEventListener("DOMContentLoaded", () => {
     isDarkMode = !isDarkMode
     document.body.classList.toggle("dark")
 
-    if (isDarkMode) {
-      moonIcon.classList.remove("hidden")
-      sunIcon.classList.add("hidden")
-    } else {
-      moonIcon.classList.add("hidden")
-      sunIcon.classList.remove("hidden")
+    if (moonIcon && sunIcon) {
+      if (isDarkMode) {
+        moonIcon.classList.remove("hidden")
+        sunIcon.classList.add("hidden")
+      } else {
+        moonIcon.classList.add("hidden")
+        sunIcon.classList.remove("hidden")
+      }
     }
 
     localStorage.setItem("darkMode", isDarkMode)
@@ -531,13 +681,17 @@ document.addEventListener("DOMContentLoaded", () => {
       recognition.lang = "en-US"
 
       recognition.onstart = () => {
-        voiceSearchButton.classList.add("listening")
+        if (voiceSearchButton) {
+          voiceSearchButton.classList.add("listening")
+        }
       }
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript
-        searchInput.value = transcript
-        handleSearch(new Event("submit"))
+        if (searchInput) {
+          searchInput.value = transcript
+          handleSearch(new Event("submit"))
+        }
       }
 
       recognition.onerror = (event) => {
@@ -545,7 +699,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       recognition.onend = () => {
-        voiceSearchButton.classList.remove("listening")
+        if (voiceSearchButton) {
+          voiceSearchButton.classList.remove("listening")
+        }
       }
 
       recognition.start()
@@ -556,25 +712,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Close history panel when clicking outside
   document.addEventListener("click", (e) => {
-    if (historyPanel.classList.contains("active") && !historyPanel.contains(e.target) && e.target !== historyToggle) {
+    if (
+      historyPanel &&
+      historyPanel.classList.contains("active") &&
+      !historyPanel.contains(e.target) &&
+      e.target !== historyToggle
+    ) {
       historyPanel.classList.remove("active")
     }
   })
-
-  // Check for URL parameters (for sharing searches or coming from history page)
-  const urlParams = new URLSearchParams(window.location.search)
-  const queryParam = urlParams.get("q")
-  if (queryParam) {
-    searchInput.value = queryParam
-    handleSearch(new Event("submit"))
-  }
 })
-
-// Declare firebase
-var firebase = window.firebase
-
-// Declare CryptoJS
-var CryptoJS = window.CryptoJS
 
 // Declare webkitSpeechRecognition
 var webkitSpeechRecognition = window.webkitSpeechRecognition
