@@ -49,24 +49,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const filterBtns = document.querySelectorAll(".filter-btn")
   const trendingTags = document.querySelectorAll(".trending-tag")
   const loadingIndicator = document.getElementById("loading-indicator")
-  const safeSearchCheckbox = document.getElementById("safe-search-checkbox")
-
-  // List of potentially explicit terms for SafeSearch filtering
-  const explicitTerms = [
-    "porn",
-    "xxx",
-    "sex",
-    "adult",
-    "nude",
-    "naked",
-    "explicit",
-    "nsfw",
-    "obscene",
-    "violence",
-    "gore",
-    "drug",
-    "gambling",
-  ]
 
   // Mock functions for user authentication and data management
   // Replace these with your actual implementation
@@ -78,7 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function getUserData() {
     // Retrieve user data from localStorage or a database
     const userData = localStorage.getItem("userData")
-    return userData ? JSON.parse(userData) : { username: "Guest", searchHistory: [], settings: { safeSearch: true } }
+    return userData ? JSON.parse(userData) : { username: "Guest", searchHistory: [] }
   }
 
   function logoutUser() {
@@ -95,22 +77,15 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("userData", JSON.stringify(userData))
   }
 
-  function saveUserData(username, token, searchHistory, settings = { safeSearch: true }) {
+  function saveUserData(username, token, searchHistory) {
     const userData = {
       username: username,
       searchHistory: searchHistory,
-      settings: settings,
     }
     localStorage.setItem("userData", JSON.stringify(userData))
     if (token) {
       localStorage.setItem("userToken", token)
     }
-  }
-
-  function updateUserSettings(settings) {
-    const userData = getUserData()
-    userData.settings = { ...userData.settings, ...settings }
-    localStorage.setItem("userData", JSON.stringify(userData))
   }
 
   function clearSearchHistory() {
@@ -138,7 +113,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentFilter = "all"
   let searchHistory = isLoggedIn ? getUserData().searchHistory : []
   let isDarkMode = localStorage.getItem("darkMode") === "true"
-  let isSafeSearchEnabled = false // Default to false
 
   // Initialize
   init()
@@ -162,7 +136,6 @@ document.addEventListener("DOMContentLoaded", () => {
     clearHistoryBtn.addEventListener("click", clearHistory)
     themeToggleBtn.addEventListener("click", toggleTheme)
     voiceSearchButton.addEventListener("click", startVoiceSearch)
-    safeSearchCheckbox.addEventListener("change", toggleSafeSearch)
 
     // Set up logout button if it exists
     const logoutBtn = document.getElementById("logout-btn")
@@ -195,15 +168,6 @@ document.addEventListener("DOMContentLoaded", () => {
       sunIcon.classList.remove("hidden")
     }
 
-    // Initialize SafeSearch from user settings
-    if (isLoggedIn) {
-      const userData = getUserData()
-      isSafeSearchEnabled = userData.settings?.safeSearch === true
-    } else {
-      isSafeSearchEnabled = false // Default for non-logged in users
-    }
-    safeSearchCheckbox.checked = isSafeSearchEnabled
-
     // Render search history
     renderSearchHistory()
 
@@ -220,21 +184,6 @@ document.addEventListener("DOMContentLoaded", () => {
   function handleLogout() {
     logoutUser()
     window.location.href = "login.html"
-  }
-
-  // Toggle SafeSearch
-  function toggleSafeSearch() {
-    isSafeSearchEnabled = safeSearchCheckbox.checked
-
-    // Save setting if logged in
-    if (isLoggedIn) {
-      updateUserSettings({ safeSearch: isSafeSearchEnabled })
-    }
-
-    // If we have results, re-filter and re-render them
-    if (currentResults.length > 0) {
-      filterAndRenderResults()
-    }
   }
 
   // Add this function to save search queries to history
@@ -259,19 +208,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const query = searchInput.value.trim()
 
     if (query.length === 0) return
-
-    // Check if SafeSearch is enabled and query contains explicit terms
-    if (isSafeSearchEnabled && containsExplicitTerms(query)) {
-      searchResults.innerHTML = `
-        <div class="no-results">
-          <h2>SafeSearch is enabled</h2>
-          <p>Your search may contain explicit content. Please disable SafeSearch or try a different search term.</p>
-        </div>
-      `
-      searchStats.classList.add("hidden")
-      pagination.classList.add("hidden")
-      return
-    }
 
     currentQuery = query
     currentPage = 1
@@ -298,25 +234,6 @@ document.addEventListener("DOMContentLoaded", () => {
     window.history.pushState({}, "", url)
   }
 
-  // Check if a query contains explicit terms
-  function containsExplicitTerms(query) {
-    const lowerQuery = query.toLowerCase()
-    return explicitTerms.some((term) => lowerQuery.includes(term))
-  }
-
-  // Filter results for SafeSearch
-  function filterResultsForSafeSearch(results) {
-    if (!isSafeSearchEnabled) {
-      return results // Return all results if SafeSearch is disabled
-    }
-
-    // Filter out results that might contain explicit content
-    return results.filter((result) => {
-      const combinedText = (result.title + " " + result.description).toLowerCase()
-      return !explicitTerms.some((term) => combinedText.includes(term))
-    })
-  }
-
   async function performSearch(query) {
     const startTime = performance.now()
 
@@ -333,16 +250,11 @@ document.addEventListener("DOMContentLoaded", () => {
       timestamp: result.timestamp,
     }))
 
-    // Apply SafeSearch filtering
-    if (isSafeSearchEnabled) {
-      currentResults = filterResultsForSafeSearch(currentResults)
-    }
-
     const endTime = performance.now()
     const timeTaken = ((endTime - startTime) / 1000).toFixed(2)
 
     // Update search stats
-    resultCount.textContent = currentResults.length
+    resultCount.textContent = data.query.searchinfo.totalhits
     searchTime.textContent = timeTaken
 
     // Render results
@@ -351,20 +263,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Show clear button and search stats
     clearSearchBtn.classList.remove("hidden")
     searchStats.classList.remove("hidden")
-  }
-
-  // Filter and re-render results (used when SafeSearch is toggled)
-  function filterAndRenderResults() {
-    // Apply SafeSearch filtering
-    if (isSafeSearchEnabled) {
-      currentResults = filterResultsForSafeSearch(currentResults)
-    }
-
-    // Update result count
-    resultCount.textContent = currentResults.length
-
-    // Render results
-    renderResults()
   }
 
   function renderResults() {
@@ -382,7 +280,6 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="no-results">
           <h2>No results found for "${currentQuery}"</h2>
           <p>Try different keywords or check your spelling.</p>
-          ${isSafeSearchEnabled ? "<p>You have SafeSearch enabled. Try disabling it for more results.</p>" : ""}
         </div>
       `
       pagination.classList.add("hidden")
@@ -473,12 +370,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return
     }
 
-    // Skip suggestions for potentially explicit queries if SafeSearch is enabled
-    if (isSafeSearchEnabled && containsExplicitTerms(query)) {
-      searchSuggestions.classList.remove("active")
-      return
-    }
-
     // Wikipedia API for suggestions
     const apiUrl = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=5&namespace=0&format=json&origin=*`
 
@@ -487,15 +378,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await response.json()
       const suggestions = data[1]
 
-      // Filter suggestions if SafeSearch is enabled
-      const filteredSuggestions = isSafeSearchEnabled
-        ? suggestions.filter((suggestion) => !containsExplicitTerms(suggestion))
-        : suggestions
-
-      if (filteredSuggestions.length > 0) {
+      if (suggestions.length > 0) {
         searchSuggestions.innerHTML = ""
 
-        filteredSuggestions.forEach((suggestion) => {
+        suggestions.forEach((suggestion) => {
           const suggestionElement = document.createElement("div")
           suggestionElement.className = "suggestion-item"
           suggestionElement.textContent = suggestion
@@ -596,7 +482,7 @@ document.addEventListener("DOMContentLoaded", () => {
     userData.searchHistory.splice(index, 1)
 
     // Save updated data
-    saveUserData(userData.username, "", userData.searchHistory, userData.settings)
+    saveUserData(userData.username, "", userData.searchHistory)
 
     // Update local searchHistory variable
     searchHistory = userData.searchHistory
