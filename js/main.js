@@ -1,12 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
   // Firebase configuration
   const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID",
+    apiKey: "AIzaSyCa5qBEF-62mIr9tbquE5dfipBzeWk4q1k",
+    authDomain: "gring-916c9.firebaseapp.com",
+    databaseURL: "https://gring-916c9-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "gring-916c9",
+    storageBucket: "gring-916c9.firebasestorage.app",
+    messagingSenderId: "680919854293",
+    appId: "1:680919854293:web:0ce7a3e15f289e444dc65c",
+    measurementId: "G-VY1VQHMQKK"
   }
 
   // Initialize Firebase if not already initialized
