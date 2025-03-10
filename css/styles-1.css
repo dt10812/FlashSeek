@@ -70,43 +70,6 @@ body {
   display: none !important;
 }
 
-/* User Authentication UI */
-.user-auth-section {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-}
-
-.auth-link {
-  color: var(--primary-color);
-  text-decoration: none;
-  margin-right: 15px;
-  font-weight: 500;
-  transition: var(--transition);
-}
-
-.auth-link:hover {
-  color: var(--primary-hover);
-  text-decoration: underline;
-}
-
-#logout-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-  font-family: inherit;
-}
-
-#user-info {
-  margin-right: 15px;
-  color: var(--text-color);
-  font-weight: 500;
-}
-
 /* Theme Toggle */
 .theme-toggle {
   position: absolute;
@@ -1119,12 +1082,5 @@ footer {
     align-self: flex-end;
     margin-top: -30px;
   }
-}
-
-.form-hint {
-  display: block;
-  color: var(--text-secondary);
-  font-size: 0.8rem;
-  margin-top: 5px;
 }
 
