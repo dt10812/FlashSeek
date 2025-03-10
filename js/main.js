@@ -1,27 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // Firebase configuration
-  const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID",
-  }
-
-  // Initialize Firebase if not already initialized
-  if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig)
-  }
-
-  const db = firebase.firestore()
-  const auth = firebase.auth()
-
-  // Function to encrypt data
-  function encryptData(data, userKey) {
-    return CryptoJS.AES.encrypt(JSON.stringify(data), userKey).toString()
-  }
-
   // DOM Elements
   const searchForm = document.getElementById("search-form")
   const searchInput = document.getElementById("search-input")
@@ -48,68 +25,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const trendingTags = document.querySelectorAll(".trending-tag")
   const loadingIndicator = document.getElementById("loading-indicator")
 
-  // Mock functions for user authentication and data management
-  // Replace these with your actual implementation
-  function isUserLoggedIn() {
-    // Check if the user is logged in (e.g., check for a token in localStorage)
-    return localStorage.getItem("userToken") !== null
-  }
-
-  function getUserData() {
-    // Retrieve user data from localStorage or a database
-    const userData = localStorage.getItem("userData")
-    return userData ? JSON.parse(userData) : { username: "Guest", searchHistory: [] }
-  }
-
-  function logoutUser() {
-    // Clear user data from localStorage and redirect to login page
-    localStorage.removeItem("userToken")
-    localStorage.removeItem("userData")
-  }
-
-  function updateSearchHistory(query) {
-    const userData = getUserData()
-    const timestamp = new Date().toISOString()
-    userData.searchHistory = userData.searchHistory || []
-    userData.searchHistory.push({ query: query, timestamp: timestamp })
-    localStorage.setItem("userData", JSON.stringify(userData))
-  }
-
-  function saveUserData(username, token, searchHistory) {
-    const userData = {
-      username: username,
-      searchHistory: searchHistory,
-    }
-    localStorage.setItem("userData", JSON.stringify(userData))
-    if (token) {
-      localStorage.setItem("userToken", token)
-    }
-  }
-
-  function clearSearchHistory() {
-    const userData = getUserData()
-    userData.searchHistory = []
-    localStorage.setItem("userData", JSON.stringify(userData))
-  }
-
-  // Check if user is logged in
-  const isLoggedIn = isUserLoggedIn()
-
-  // Add user info to the UI if logged in
-  if (isLoggedIn && document.getElementById("user-info")) {
-    const userData = getUserData()
-    document.getElementById("user-info").textContent = userData.username
-    document.getElementById("user-section").classList.remove("hidden")
-    document.getElementById("login-section").classList.add("hidden")
-  }
-
   // State
   let currentQuery = ""
   let currentPage = 1
   const resultsPerPage = 10
   let currentResults = []
   let currentFilter = "all"
-  let searchHistory = isLoggedIn ? getUserData().searchHistory : []
+  let searchHistory = JSON.parse(localStorage.getItem("searchHistory")) || []
   let isDarkMode = localStorage.getItem("darkMode") === "true"
 
   // Initialize
@@ -134,12 +56,6 @@ document.addEventListener("DOMContentLoaded", () => {
     clearHistoryBtn.addEventListener("click", clearHistory)
     themeToggleBtn.addEventListener("click", toggleTheme)
     voiceSearchButton.addEventListener("click", startVoiceSearch)
-
-    // Set up logout button if it exists
-    const logoutBtn = document.getElementById("logout-btn")
-    if (logoutBtn) {
-      logoutBtn.addEventListener("click", handleLogout)
-    }
 
     // Set up filter buttons
     filterBtns.forEach((btn) => {
@@ -178,26 +94,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Handle user logout
-  function handleLogout() {
-    logoutUser()
-    window.location.href = "login.html"
-  }
-
   // Add this function to save search queries to history
   function addToHistory(query) {
-    if (!isLoggedIn) {
-      return // Don't save history if not logged in
+    let searchHistory = JSON.parse(localStorage.getItem("searchHistory")) || []
+
+    // Remove duplicate if exists
+    searchHistory = searchHistory.filter((item) => item.query !== query)
+
+    // Add new search to the beginning of the array
+    searchHistory.unshift({
+      query: query,
+      timestamp: new Date().toISOString(),
+    })
+
+    // Limit history to 50 items
+    if (searchHistory.length > 50) {
+      searchHistory.pop()
     }
 
-    // Update search history in cookie
-    updateSearchHistory(query)
-
-    // Update local searchHistory variable
-    searchHistory = getUserData().searchHistory
-
-    // Update the UI
-    renderSearchHistory()
+    localStorage.setItem("searchHistory", JSON.stringify(searchHistory))
   }
 
   // Update the handleSearch function to include addToHistory
@@ -429,7 +344,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderSearchHistory() {
     historyList.innerHTML = ""
 
-    if (!isLoggedIn || searchHistory.length === 0) {
+    if (searchHistory.length === 0) {
       historyList.innerHTML = '<li class="no-history">No search history yet</li>'
       return
     }
@@ -471,34 +386,14 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function deleteHistoryItem(index) {
-    if (!isLoggedIn) return
-
-    // Get current user data
-    const userData = getUserData()
-
-    // Remove the item at the specified index
-    userData.searchHistory.splice(index, 1)
-
-    // Save updated data
-    saveUserData(userData.username, "", userData.searchHistory)
-
-    // Update local searchHistory variable
-    searchHistory = userData.searchHistory
-
-    // Update the UI
+    searchHistory.splice(index, 1)
+    localStorage.setItem("searchHistory", JSON.stringify(searchHistory))
     renderSearchHistory()
   }
 
   function clearHistory() {
-    if (!isLoggedIn) return
-
-    // Clear search history in cookie
-    clearSearchHistory()
-
-    // Update local searchHistory variable
     searchHistory = []
-
-    // Update the UI
+    localStorage.setItem("searchHistory", JSON.stringify(searchHistory))
     renderSearchHistory()
   }
 
@@ -559,6 +454,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   })
 
+  // Add this at the end of the DOMContentLoaded event listener
   // Check for URL parameters (for sharing searches or coming from history page)
   const urlParams = new URLSearchParams(window.location.search)
   const queryParam = urlParams.get("q")
@@ -567,13 +463,4 @@ document.addEventListener("DOMContentLoaded", () => {
     handleSearch(new Event("submit"))
   }
 })
-
-// Declare firebase
-var firebase = window.firebase
-
-// Declare CryptoJS
-var CryptoJS = window.CryptoJS
-
-// Declare webkitSpeechRecognition
-var webkitSpeechRecognition = window.webkitSpeechRecognition
 
