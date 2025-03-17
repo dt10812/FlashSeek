@@ -17,6 +17,11 @@ document.addEventListener("DOMContentLoaded", () => {
   let isProcessing = false
   let isDarkMode = localStorage.getItem("darkMode") === "true"
 
+  // API Configuration
+  // Note: In a production environment, you should use environment variables
+  // and proper authentication for API keys
+  const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
+
   // Initialize
   init()
 
@@ -66,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
     chatInput.value = ""
 
     // Process message and get response
-    processMessage(message)
+    getAIResponse(message)
   }
 
   function addMessageToChat(message, sender) {
@@ -120,61 +125,129 @@ document.addEventListener("DOMContentLoaded", () => {
     return message.replace(urlRegex, (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`)
   }
 
-  function processMessage(message) {
+  async function getAIResponse(message) {
     isProcessing = true
 
     // Show typing indicator
     showTypingIndicator()
 
-    // Simulate API call delay
-    setTimeout(
-      () => {
-        // Remove typing indicator
-        removeTypingIndicator()
+    try {
+      // First, try to use the Gemini API if an API key is available
+      const apiKey = localStorage.getItem("gemini_api_key")
 
-        // Get AI response
-        const response = getAIResponse(message)
-
-        // Add bot message to chat
-        addMessageToChat(response, "bot")
-
-        isProcessing = false
-      },
-      1000 + Math.random() * 1000,
-    ) // Random delay between 1-2 seconds
-  }
-
-  function showTypingIndicator() {
-    const typingIndicator = document.createElement("div")
-    typingIndicator.className = "message bot-message typing-indicator"
-    typingIndicator.innerHTML = `
-      <div class="message-avatar">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"></path>
-        </svg>
-      </div>
-      <div class="message-content">
-        <div class="typing-dots">
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-      </div>
-    `
-
-    chatMessages.appendChild(typingIndicator)
-    chatMessages.scrollTop = chatMessages.scrollHeight
-  }
-
-  function removeTypingIndicator() {
-    const typingIndicator = document.querySelector(".typing-indicator")
-    if (typingIndicator) {
-      typingIndicator.remove()
+      if (apiKey) {
+        try {
+          const response = await fetchGeminiResponse(message, apiKey)
+          removeTypingIndicator()
+          addMessageToChat(response, "bot")
+        } catch (error) {
+          console.error("Error with Gemini API:", error)
+          // Fall back to local responses
+          const fallbackResponse = getLocalResponse(message)
+          removeTypingIndicator()
+          addMessageToChat(fallbackResponse, "bot")
+        }
+      } else {
+        // If no API key is available, use local responses with a delay for realism
+        setTimeout(
+          () => {
+            const localResponse = getLocalResponse(message)
+            removeTypingIndicator()
+            addMessageToChat(localResponse, "bot")
+          },
+          1000 + Math.random() * 1000,
+        )
+      }
+    } catch (error) {
+      console.error("Error processing message:", error)
+      removeTypingIndicator()
+      addMessageToChat("I'm sorry, I encountered an error processing your request. Please try again later.", "bot")
+    } finally {
+      isProcessing = false
     }
   }
 
-  function getAIResponse(message) {
-    // Simple response logic - in a real app, this would call an AI API
+  // Replace fetchAIResponse with fetchGeminiResponse
+  async function fetchGeminiResponse(message, apiKey) {
+    // Get the last few messages for context (up to 5)
+    const recentMessages = chatHistory.slice(-5)
+
+    // Format messages for the API
+    const contents = []
+
+    // Add system message
+    contents.push({
+      role: "user",
+      parts: [
+        {
+          text: "You are FlashSeek AI Assistant, a helpful and friendly AI assistant. Provide concise, accurate, and helpful responses. You are part of the FlashSeek search engine platform.",
+        },
+      ],
+    })
+
+    contents.push({
+      role: "model",
+      parts: [
+        {
+          text: "I understand. I am FlashSeek AI Assistant, a helpful and friendly AI assistant that's part of the FlashSeek search engine platform. I'll provide concise, accurate, and helpful responses to user queries.",
+        },
+      ],
+    })
+
+    // Add recent conversation history
+    recentMessages.forEach((item) => {
+      const role = item.sender === "user" ? "user" : "model"
+      contents.push({
+        role: role,
+        parts: [{ text: item.message }],
+      })
+    })
+
+    // Add the current message
+    contents.push({
+      role: "user",
+      parts: [{ text: message }],
+    })
+
+    const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: contents,
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 800,
+          topP: 0.95,
+          topK: 40,
+        },
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    // Extract the response text from the Gemini API response
+    if (
+      data.candidates &&
+      data.candidates.length > 0 &&
+      data.candidates[0].content &&
+      data.candidates[0].content.parts &&
+      data.candidates[0].content.parts.length > 0
+    ) {
+      return data.candidates[0].content.parts[0].text
+    } else {
+      throw new Error("Unexpected response format from Gemini API")
+    }
+  }
+
+  // Update the getLocalResponse function to handle Gemini API key
+  function getLocalResponse(message) {
+    // Simple response logic for when API is not available
     message = message.toLowerCase()
 
     if (message.includes("hello") || message.includes("hi") || message.includes("hey")) {
@@ -206,6 +279,17 @@ document.addEventListener("DOMContentLoaded", () => {
         "Why was the computer cold? It left its Windows open!",
       ]
       return jokes[Math.floor(Math.random() * jokes.length)]
+    } else if (message.includes("api key") || message.includes("gemini") || message.includes("set up api")) {
+      return "To use the AI capabilities with Google Gemini, you'll need to add your API key. You can do this by typing 'set gemini key YOUR_API_KEY_HERE' in the chat. Your key will be stored locally in your browser and not sent anywhere else."
+    } else if (message.startsWith("set gemini key ")) {
+      const apiKey = message.substring(14).trim()
+      if (apiKey.length > 20) {
+        // Simple validation
+        localStorage.setItem("gemini_api_key", apiKey)
+        return "Gemini API key saved successfully! You can now use the AI-powered responses. Your key is stored only in your browser's local storage."
+      } else {
+        return "That doesn't look like a valid API key. Please check and try again."
+      }
     } else {
       const genericResponses = [
         "That's an interesting question. While I don't have all the information, I'd be happy to discuss this further.",
@@ -215,6 +299,35 @@ document.addEventListener("DOMContentLoaded", () => {
         "That's a great question! I'm designed to provide helpful information on a wide range of topics.",
       ]
       return genericResponses[Math.floor(Math.random() * genericResponses.length)]
+    }
+  }
+
+  function showTypingIndicator() {
+    const typingIndicator = document.createElement("div")
+    typingIndicator.className = "message bot-message typing-indicator"
+    typingIndicator.innerHTML = `
+      <div class="message-avatar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"></path>
+        </svg>
+      </div>
+      <div class="message-content">
+        <div class="typing-dots">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+    `
+
+    chatMessages.appendChild(typingIndicator)
+    chatMessages.scrollTop = chatMessages.scrollHeight
+  }
+
+  function removeTypingIndicator() {
+    const typingIndicator = document.querySelector(".typing-indicator")
+    if (typingIndicator) {
+      typingIndicator.remove()
     }
   }
 
@@ -330,4 +443,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Declare webkitSpeechRecognition to avoid undefined errors
 var webkitSpeechRecognition = window.webkitSpeechRecognition
+
 
