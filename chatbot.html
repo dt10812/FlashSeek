@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlashSeek AI Assistant - Your Intelligent Chat Companion</title>
+  <link rel="stylesheet" href="css/styles-1.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+  <meta name="description" content="Chat with FlashSeek AI Assistant - Get instant answers to your questions and helpful recommendations.">
+  <meta name="keywords" content="AI chatbot, virtual assistant, FlashSeek, chat, AI help">
+  <meta name="dcterms.rightsHolder" content="dt10812">
+  <meta name="dcterms.dateCopyrighted" content="2025">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body>
+  <div class="theme-toggle">
+    <button id="theme-toggle-btn" aria-label="Toggle dark mode">
+      <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden">
+        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+      </svg>
+      <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4"></circle>
+        <path d="M12 2v2"></path>
+        <path d="M12 20v2"></path>
+        <path d="m4.93 4.93 1.41 1.41"></path>
+        <path d="m17.66 17.66 1.41 1.41"></path>
+        <path d="M2 12h2"></path>
+        <path d="M20 12h2"></path>
+        <path d="m6.34 17.66-1.41 1.41"></path>
+        <path d="m19.07 4.93-1.41 1.41"></path>
+      </svg>
+    </button>
+  </div>
+
+  <div class="container">
+    <header class="search-header">
+      <div class="logo-container">
+        <h1 class="logo">FlashSeek</h1>
+        <span class="logo-icon">⚡</span>
+      </div>
+    </header>
+
+    <nav class="main-nav">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="chatbot.html" class="active">AI Assistant</a></li>
+        <li><a href="history.html">Search History</a></li>
+        <li><a href="about.html">About</a></li>
+      </ul>
+    </nav>
+
+    <main class="chatbot-content">
+      <div class="chatbot-container">
+        <div class="chatbot-header">
+          <div class="chatbot-avatar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"></path>
+              <path d="M12 6v4"></path>
+              <path d="M12 14h.01"></path>
+            </svg>
+          </div>
+          <div class="chatbot-info">
+            <h2>FlashSeek AI Assistant</h2>
+            <p>Online • Responds instantly</p>
+          </div>
+          <button id="clear-chat" class="clear-chat-btn" aria-label="Clear chat history">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18"></path>
+              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+          </button>
+        </div>
+        
+        <div id="chat-messages" class="chat-messages">
+          <div class="message bot-message">
+            <div class="message-avatar">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"></path>
+              </svg>
+            </div>
+            <div class="message-content">
+              <p>Hello! I'm FlashSeek AI Assistant. How can I help you today?</p>
+            </div>
+          </div>
+          
+          <div class="message bot-message">
+            <div class="message-avatar">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"></path>
+              </svg>
+            </div>
+            <div class="message-content">
+              <p>You can ask me questions, get recommendations, or just chat. I'm here to assist!</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="chat-input-container">
+          <form id="chat-form">
+            <div class="chat-input-wrapper">
+              <input 
+                type="text" 
+                id="chat-input" 
+                placeholder="Type your message here..." 
+                autocomplete="off"
+                aria-label="Chat message"
+              >
+              <button type="button" id="voice-chat" class="voice-chat-btn" aria-label="Voice input">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                  <line x1="12" y1="19" x2="12" y2="23"></line>
+                  <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+              </button>
+            </div>
+            <button type="submit" id="send-message" class="send-message-btn" aria-label="Send message">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </form>
+        </div>
+        
+        <div class="chat-features">
+          <div class="feature">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <span>Ask anything</span>
+          </div>
+          <div class="feature">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            <span>Private & secure</span>
+          </div>
+          <div class="feature">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span>24/7 assistance</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="chatbot-sidebar">
+        <div class="sidebar-section">
+          <h3>Suggested Questions</h3>
+          <ul class="suggested-questions">
+            <li><button class="suggested-question">What can you help me with?</button></li>
+            <li><button class="suggested-question">How does FlashSeek search work?</button></li>
+            <li><button class="suggested-question">Tell me about the latest tech news</button></li>
+            <li><button class="suggested-question">What's the weather like today?</button></li>
+            <li><button class="suggested-question">Recommend a good book to read</button></li>
+          </ul>
+        </div>
+        
+        <div class="sidebar-section">
+          <h3>AI Assistant Features</h3>
+          <ul class="feature-list">
+            <li>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <span>Real-time responses</span>
+            </li>
+            <li>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span>Natural conversations</span>
+            </li>
+            <li>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              <span>Personalized recommendations</span>
+            </li>
+            <li>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                <line x1="15" y1="9" x2="15.01" y2="9"></line>
+              </svg>
+              <span>Friendly and helpful</span>
+            </li>
+            <li>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+              <span>Privacy protected</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <div class="footer-content">
+        <p>&copy; 2025 FlashSeek. All rights reserved. Created by dt10812.</p>
+        <div class="footer-links">
+          <a href="privacy-policy.html">Privacy Policy</a>
+          <a href="terms-of-service.html">Terms of Service</a>
+          <a href="about.html">About</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <div id="loading-indicator" class="loading-indicator hidden">
+    <div class="spinner"></div>
+    <p>Processing your request...</p>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script src="js/chatbot.js"></script>
+</body>
+</html>
+
