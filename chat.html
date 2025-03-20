@@ -1,46 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlashSeekBot</title>
-    <link rel="stylesheet" href="styles-1.css"> <!-- Link to your existing styles -->
-    <style>
-        /* Additional Chatbot Styling */
-        .chatbot-container {
-            max-width: 600px;
-            margin: auto;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .chatbot-title {
-            font-size: 24px;
-            font-weight: bold;
-            color: #333;
-            text-align: center;
-            margin-bottom: 15px;
-        }
-
-        iframe {
-            width: 100%;
-            height: 700px;
-            border: none;
-            border-radius: 8px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlashSeek AI Assistant - Your Intelligent Chat Companion</title>
+  <link rel="stylesheet" href="css/styles-1.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+  <meta name="description" content="Chat with FlashSeek AI Assistant - Get instant answers to your questions and helpful recommendations.">
+  <meta name="keywords" content="AI chatbot, virtual assistant, FlashSeek, chat, AI help">
+  <meta name="dcterms.rightsHolder" content="dt10812">
+  <meta name="dcterms.dateCopyrighted" content="2025">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 <body>
+  <div class="theme-toggle">
+    <button id="theme-toggle-btn" aria-label="Toggle dark mode">
+      <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden">
+        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+      </svg>
+      <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4"></circle>
+        <path d="M12 2v2"></path>
+        <path d="M12 20v2"></path>
+        <path d="m4.93 4.93 1.41 1.41"></path>
+        <path d="m17.66 17.66 1.41 1.41"></path>
+        <path d="M2 12h2"></path>
+        <path d="M20 12h2"></path>
+        <path d="m6.34 17.66-1.41 1.41"></path>
+        <path d="m19.07 4.93-1.41 1.41"></path>
+      </svg>
+    </button>
+  </div>
 
-    <div class="chatbot-container">
-        <h2 class="chatbot-title">Chat with FlashSeekBot</h2>
+  <div class="container">
+    <header class="search-header">
+      <div class="logo-container">
+        <h1 class="logo">FlashSeek</h1>
+        <span class="logo-icon">⚡</span>
+      </div>
+    </header>
+
+    <nav class="main-nav">
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="chatbot.html" class="active">AI Assistant</a></li>
+        <li><a href="history.html">Search History</a></li>
+        <li><a href="about.html">About</a></li>
+      </ul>
+    </nav>
+
+    <!-- Chatbot Section with Embedded chat.html -->
+    <main class="chatbot-content">
+      <div class="chatbot-container">
         <iframe 
-            src="https://chatbot.getmindpal.com/flashseekbot"
-            allow="clipboard-read; clipboard-write; microphone">
+          src="https://chatbot.getmindpal.com/flashseekbot" 
+          width="100%" 
+          height="600px" 
+          allow="clipboard-read; clipboard-write; microphone"
+          style="border: none; border-radius: 8px;">
         </iframe>
-    </div>
+      </div>
+    </main>
 
+    <footer>
+      <div class="footer-content">
+        <p>&copy; 2025 FlashSeek. All rights reserved. Created by dt10812.</p>
+        <div class="footer-links">
+          <a href="privacy-policy.html">Privacy Policy</a>
+          <a href="terms-of-service.html">Terms of Service</a>
+          <a href="about.html">About</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <div id="loading-indicator" class="loading-indicator hidden">
+    <div class="spinner"></div>
+    <p>Processing your request...</p>
+  </div>
 </body>
 </html>
+
+
