@@ -7,13 +7,12 @@
   <link rel="stylesheet" href="css/styles-1.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
   <link rel="icon" href="logo.png" type="image/png">
-  
-  <!-- Google OAuth SDK -->
+
+  <!-- OAuth SDKs -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+
   <!-- CryptoJS for encryption -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-  <!-- Cookie utilities -->
-  <script src="js/cookie-utils.js"></script>
 </head>
 <body>
   <div class="container">
@@ -27,19 +26,26 @@
     <main class="auth-content">
       <h2>Create a FlashSeek Account</h2>
 
-      <!-- Google Sign-Up Button -->
-      <div id="g_id_onload"
-           data-client_id="1069448401519-lee90knqm1e4hnqe0bh9fj5aqgiivgqa.apps.googleusercontent.com"
-           data-context="signup"
-           data-ux_mode="popup"
-           data-callback="handleGoogleSignup"
-           data-auto_prompt="false">
+      <!-- 🔹 OAuth 2.0 Sign-Up Options -->
+      <div class="oauth-buttons">
+        <div id="g_id_onload"
+             data-client_id="YOUR_GOOGLE_CLIENT_ID"
+             data-context="signup"
+             data-ux_mode="popup"
+             data-callback="handleGoogleSignup"
+             data-auto_prompt="false">
+        </div>
+        <div class="g_id_signin" data-type="standard"></div>
+
+        <button class="oauth-btn twitch-btn" onclick="loginWithTwitch()">Sign up with Twitch</button>
+        <button class="oauth-btn twitter-btn" onclick="loginWithTwitter()">Sign up with X (Twitter)</button>
+        <button class="oauth-btn github-btn" onclick="loginWithGitHub()">Sign up with GitHub</button>
+        <button class="oauth-btn discord-btn" onclick="loginWithDiscord()">Sign up with Discord</button>
       </div>
-      <div class="g_id_signin" data-type="standard"></div>
 
       <hr> <!-- Divider -->
 
-      <!-- Email/Password Sign-Up Form -->
+      <!-- 🔹 Email/Password Sign-Up -->
       <form id="signup-form" class="auth-form">
         <div class="form-group">
           <label for="name">Full Name</label>
@@ -69,50 +75,52 @@
     <footer>
       <div class="footer-content">
         <p>&copy; 2025 FlashSeek. All rights reserved. Created by dt10812.</p>
-        <div class="footer-links">
-          <a href="index.html">Home</a>
-          <a href="about.html">About</a>
-          <a href="privacy-policy.html">Privacy Policy</a>
-          <a href="terms-of-service.html">Terms of Service</a>
-        </div>
       </div>
     </footer>
   </div>
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Redirect if already logged in
       if (getCookie('userData')) {
         window.location.href = 'index.html';
         return;
       }
-      
+
       const signupForm = document.getElementById('signup-form');
       const errorMessage = document.getElementById('error-message');
       const successMessage = document.getElementById('success-message');
 
-      // 🔹 Google Sign-Up Callback
       window.handleGoogleSignup = function(response) {
         const credential = response.credential;
         const decodedToken = JSON.parse(atob(credential.split('.')[1]));
 
-        const userData = {
-          name: decodedToken.name,
-          email: decodedToken.email,
-          avatar: decodedToken.picture
-        };
-
-        // Store user data in cookies
-        document.cookie = `userData=${JSON.stringify(userData)}; path=/; max-age=31536000`;
-
-        successMessage.textContent = "Google sign-up successful! Redirecting...";
-        setTimeout(() => window.location.href = 'index.html', 2000);
+        saveUserData(decodedToken.name, decodedToken.email, decodedToken.picture);
       };
 
-      // 🔹 Email/Password Sign-Up
+      function loginWithTwitch() {
+        const clientId = "YOUR_TWITCH_CLIENT_ID";
+        const redirectUri = "http://localhost/oauth-callback.html";
+        window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=user:read:email`;
+      }
+
+      function loginWithTwitter() {
+        window.location.href = "https://api.twitter.com/oauth/authenticate?oauth_token=YOUR_TWITTER_OAUTH_TOKEN";
+      }
+
+      function loginWithGitHub() {
+        const clientId = "Iv23liZMueMtBZfJdGZO";
+        window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=user:email`;
+      }
+
+      function loginWithDiscord() {
+        const clientId = "YOUR_DISCORD_CLIENT_ID";
+        const redirectUri = encodeURIComponent("http://localhost/oauth-callback.html");
+        window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=identify email`;
+      }
+
       signupForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        
+
         errorMessage.textContent = '';
         successMessage.textContent = '';
 
@@ -121,43 +129,27 @@
         const password = document.getElementById('password').value;
         const confirmPassword = document.getElementById('confirm-password').value;
 
-        if (!name) {
-          errorMessage.textContent = 'Please enter your full name';
+        if (!name || !validateEmail(email) || password.length < 6 || password !== confirmPassword) {
+          errorMessage.textContent = 'Invalid input. Please check your details.';
           return;
         }
 
-        if (!validateEmail(email)) {
-          errorMessage.textContent = 'Please enter a valid email address';
-          return;
-        }
-
-        if (password.length < 6) {
-          errorMessage.textContent = 'Password must be at least 6 characters long';
-          return;
-        }
-
-        if (password !== confirmPassword) {
-          errorMessage.textContent = 'Passwords do not match';
-          return;
-        }
-
-        successMessage.textContent = 'Creating your account...';
-
-        // Encrypt password before storing
         const encryptedPassword = CryptoJS.AES.encrypt(password, 'flashseek-secret-key').toString();
-        
-        const userData = { name, email, password: encryptedPassword };
+        saveUserData(name, email, encryptedPassword);
 
-        // Store user data in cookies
-        document.cookie = `userData=${JSON.stringify(userData)}; path=/; max-age=31536000`;
-
-        successMessage.textContent = 'Account created successfully! Redirecting to login...';
+        successMessage.textContent = 'Account created successfully! Redirecting...';
         setTimeout(() => window.location.href = 'login.html', 2000);
       });
 
       function validateEmail(email) {
-        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return re.test(email);
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      }
+
+      function saveUserData(name, email, avatar) {
+        const userData = { name, email, avatar };
+        document.cookie = `userData=${JSON.stringify(userData)}; path=/; max-age=31536000`;
+        successMessage.textContent = "Sign-up successful! Redirecting...";
+        setTimeout(() => window.location.href = 'index.html', 2000);
       }
 
       function getCookie(name) {
