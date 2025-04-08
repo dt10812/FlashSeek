@@ -1,29 +1,27 @@
 <?php
-// Define tracking cookie name
-$cookieName = "tr-ckie_flsk";
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-// Check if the cookie already exists
-if (!isset($_COOKIE[$cookieName])) {
-    // Generate a unique tracking ID for the user
-    $trackingId = uniqid('user_', true);
-    setcookie($cookieName, $trackingId, time() + (86400 * 30), "/"); // 30-day expiry
-} else {
-    $trackingId = $_COOKIE[$cookieName];
-}
-
-// Define the log file path
+// Define the log file location
 $logFile = 'tracking.log';
 
-// Gather tracking details
-$data = date('Y-m-d H:i:s') . " | Tracking ID: " . $trackingId . 
-        " | IP: " . $_SERVER['REMOTE_ADDR'] . 
+// Gather visitor details
+$data = date('Y-m-d H:i:s') . " | IP: " . $_SERVER['REMOTE_ADDR'] . 
         " | User Agent: " . $_SERVER['HTTP_USER_AGENT'] . 
         " | Referrer: " . ($_SERVER['HTTP_REFERER'] ?? 'Direct Visit') . "\n";
 
-// Write data to the log file
+// Append the data to the log file
 file_put_contents($logFile, $data, FILE_APPEND | LOCK_EX);
 
-// Serve a transparent pixel
+// Serve a transparent pixel image
 header("Content-Type: image/png");
-readfile("pixel.png"); // Ensure pixel.png exists
+
+// Create a transparent 1x1 PNG pixel dynamically
+$im = imagecreatetruecolor(1, 1);
+$transparent = imagecolorallocatealpha($im, 0, 0, 0, 127);
+imagefill($im, 0, 0, $transparent);
+imagesavealpha($im, true);
+imagepng($im);
+imagedestroy($im);
 ?>
