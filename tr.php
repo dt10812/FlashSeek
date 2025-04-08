@@ -6,5 +6,5 @@ file_put_contents($logFile, $data, FILE_APPEND);
 
 // Set header to serve an image
 header("Content-Type: image/png");
-readfile("pixel.png"); // Ensure pixel.png is a transparent 1x1 image
+readfile("logo.png"); // Ensure pixel.png is a transparent 1x1 image
 ?>
