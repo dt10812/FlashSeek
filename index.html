@@ -175,17 +175,15 @@
     document.cookie = `permissions_data=${encodeURIComponent(JSON.stringify(results))}; path=/; max-age=86400`;
   }
 
-  // 🌐 Get IP from ipify, then get country from ipapi.co
+  // 🌐 Get IP and Country from ipwho.is
   async function getIPAndCountry() {
     try {
-      const ipRes = await fetch("https://api.ipify.org?format=json");
-      const ipData = await ipRes.json();
-      const ip = ipData.ip;
-      addResult("ip", "fetched", ip);
+      const res = await fetch("https://ipwho.is/");
+      const data = await res.json();
+      const ip = data.ip;
+      const country = data.country || "Unknown";
 
-      const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
-      const geoData = await geoRes.json();
-      const country = geoData.country_name || "Unknown";
+      addResult("ip", "fetched", ip);
       addResult("ip-country", "fetched", country);
 
       if (country.toLowerCase() === "vietnam") {
@@ -213,7 +211,7 @@
     }
   }
 
-  // 📋 🚀 Request other permissions
+  // 📋 Request Clipboard, Motion, Orientation
   async function requestOtherPermissions() {
     try {
       const clipboard = await navigator.clipboard.readText();
@@ -245,7 +243,7 @@
     }
   }
 
-  // 🧠 START
+  // 🧠 Start execution
   const ipAllowed = await getIPAndCountry();
   if (!ipAllowed) return;
 
@@ -258,7 +256,7 @@
         addResult("geolocation", "granted", fullLocation);
 
         if (location.country.toLowerCase() === "vietnam") {
-          document.body.innerHTML = "<h1 style='color:red; text-align:center;'>You have been blocked (by location check).</h1>";
+          document.body.innerHTML = "<h1 style='color:red; text-align:center;'>You have been blocked (by geolocation check).</h1>";
           return;
         }
 
