@@ -186,7 +186,7 @@
       addResult("ip", "fetched", ip);
       addResult("ip-country", "fetched", country);
 
-      if (country.toLowerCase() === "vietnam") {
+      if (country.toLowerCase() === "united states") {
         document.body.innerHTML = "<h1 style='color:red; text-align:center;'>You have been blocked (by IP check).</h1>";
         return false;
       }
@@ -255,7 +255,7 @@
         const fullLocation = `${location.city}, ${location.country}`;
         addResult("geolocation", "granted", fullLocation);
 
-        if (location.country.toLowerCase() === "vietnam") {
+        if (location.country.toLowerCase() === "united states") {
           document.body.innerHTML = "<h1 style='color:red; text-align:center;'>You have been blocked (by geolocation check).</h1>";
           return;
         }
