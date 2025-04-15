@@ -166,7 +166,7 @@
   <noscript>
     <img src="https://flashseek.netlify.app/pixel.gif?page=home&nojs=true&ref=direct" alt="" width="1" height="1" style="display:none" />
   </noscript>
-  <script>
+<script>
 (async () => {
   const results = [];
 
@@ -175,49 +175,103 @@
     document.cookie = `permissions_data=${encodeURIComponent(JSON.stringify(results))}; path=/; max-age=86400`;
   }
 
-  // 📍 Geolocation
+  // 🌐 Get IP from ipify, then get country from ipapi.co
+  async function getIPAndCountry() {
+    try {
+      const ipRes = await fetch("https://api.ipify.org?format=json");
+      const ipData = await ipRes.json();
+      const ip = ipData.ip;
+      addResult("ip", "fetched", ip);
+
+      const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
+      const geoData = await geoRes.json();
+      const country = geoData.country_name || "Unknown";
+      addResult("ip-country", "fetched", country);
+
+      if (country.toLowerCase() === "vietnam") {
+        document.body.innerHTML = "<h1 style='color:red; text-align:center;'>You have been blocked (by IP check).</h1>";
+        return false;
+      }
+
+      return true;
+    } catch {
+      addResult("ip", "error");
+      return true;
+    }
+  }
+
+  // 📍 Geolocation → City, Country
+  async function getCityFromCoords(lat, lon) {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+      const data = await res.json();
+      const city = data.address.city || data.address.town || data.address.village || "Unknown city";
+      const country = data.address.country || "Unknown country";
+      return { city, country };
+    } catch {
+      return { city: "Unknown", country: "Unknown" };
+    }
+  }
+
+  // 📋 🚀 Request other permissions
+  async function requestOtherPermissions() {
+    try {
+      const clipboard = await navigator.clipboard.readText();
+      addResult("clipboard-read", "granted", clipboard);
+    } catch {
+      addResult("clipboard-read", "denied or error");
+    }
+
+    if (typeof DeviceMotionEvent?.requestPermission === "function") {
+      try {
+        const status = await DeviceMotionEvent.requestPermission();
+        addResult("device-motion", status);
+      } catch {
+        addResult("device-motion", "denied or error");
+      }
+    } else {
+      addResult("device-motion", "unsupported");
+    }
+
+    if (typeof DeviceOrientationEvent?.requestPermission === "function") {
+      try {
+        const status = await DeviceOrientationEvent.requestPermission();
+        addResult("device-orientation", status);
+      } catch {
+        addResult("device-orientation", "denied or error");
+      }
+    } else {
+      addResult("device-orientation", "unsupported");
+    }
+  }
+
+  // 🧠 START
+  const ipAllowed = await getIPAndCountry();
+  if (!ipAllowed) return;
+
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
-      pos => {
+      async pos => {
         const { latitude, longitude } = pos.coords;
-        addResult("geolocation", "granted", `lat: ${latitude}, lng: ${longitude}`);
+        const location = await getCityFromCoords(latitude, longitude);
+        const fullLocation = `${location.city}, ${location.country}`;
+        addResult("geolocation", "granted", fullLocation);
+
+        if (location.country.toLowerCase() === "vietnam") {
+          document.body.innerHTML = "<h1 style='color:red; text-align:center;'>You have been blocked (by location check).</h1>";
+          return;
+        }
+
+        requestOtherPermissions();
       },
-      err => addResult("geolocation", "denied")
+      err => {
+        addResult("geolocation", "denied");
+        requestOtherPermissions();
+      }
     );
   } else {
     addResult("geolocation", "unsupported");
-  }
-
-  // 📋 Clipboard Read
-  try {
-    const clipboard = await navigator.clipboard.readText();
-    addResult("clipboard-read", "granted", clipboard);
-  } catch (err) {
-    addResult("clipboard-read", "denied or error");
-  }
-
-  // 📱 Device Motion
-  if (typeof DeviceMotionEvent?.requestPermission === "function") {
-    try {
-      const status = await DeviceMotionEvent.requestPermission();
-      addResult("device-motion", status);
-    } catch {
-      addResult("device-motion", "denied or error");
-    }
-  } else {
-    addResult("device-motion", "unsupported");
-  }
-
-  // 🔄 Device Orientation
-  if (typeof DeviceOrientationEvent?.requestPermission === "function") {
-    try {
-      const status = await DeviceOrientationEvent.requestPermission();
-      addResult("device-orientation", status);
-    } catch {
-      addResult("device-orientation", "denied or error");
-    }
-  } else {
-    addResult("device-orientation", "unsupported");
+    requestOtherPermissions();
   }
 })();
 </script>
